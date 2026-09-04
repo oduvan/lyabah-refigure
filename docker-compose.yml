@@ -1,0 +1,54 @@
+name: ${SERVICE_NAME}
+
+# A service that attaches to the shared infrastructure (lyabah-shared-server):
+# joins the `shared` network, advertises its hostname to Traefik, and reaches the
+# shared Postgres/Redis/mail at hosts `postgres` / `redis` / `mail`. It runs NO
+# Traefik/DB/Redis of its own.
+#
+# Per-service values (SERVICE_NAME, SERVICE_HOST, …) come from `.env` — Compose
+# interpolates them here at deploy time, so nothing in this file needs editing when
+# you create a service from the template. Just fill in `.env` (see .env.example).
+
+services:
+  app:
+    image: ${SERVICE_NAME}:latest   # local tag only — built on the server, never pushed
+    build: .
+    restart: unless-stopped
+    # Only the runtime connection strings are injected — NOT the whole .env, so
+    # the Postgres admin creds never reach the app container.
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      SMTP_URL: ${SMTP_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_FROM: ${SMTP_FROM}
+    networks:
+      - shared
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${SERVICE_NAME}.rule=Host(`${SERVICE_HOST}`)
+      - traefik.http.routers.${SERVICE_NAME}.entrypoints=websecure
+      - traefik.http.routers.${SERVICE_NAME}.tls.certresolver=letsencrypt
+      - traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port=8080
+      # ── Apex domain + www (optional) ───────────────────────────────────────
+      # SERVICE_HOST can be an apex (e.g. lyabah.com) — nothing special needed.
+      # To ALSO serve www and redirect it to the apex, replace the rule line above
+      # with the next one and add the middleware (note: '$' is doubled to '$$' so
+      # Compose doesn't interpolate it):
+      #   - traefik.http.routers.${SERVICE_NAME}.rule=Host(`${SERVICE_HOST}`) || Host(`www.${SERVICE_HOST}`)
+      #   - traefik.http.routers.${SERVICE_NAME}.middlewares=${SERVICE_NAME}-wwwredir
+      #   - traefik.http.middlewares.${SERVICE_NAME}-wwwredir.redirectregex.regex=^https://www\.(.+)
+      #   - traefik.http.middlewares.${SERVICE_NAME}-wwwredir.redirectregex.replacement=https://$${1}
+      #   - traefik.http.middlewares.${SERVICE_NAME}-wwwredir.redirectregex.permanent=true
+
+networks:
+  # External — owned by the infra repo. Never created here.
+  shared:
+    external: true
+    name: ${SHARED_NETWORK:-shared}

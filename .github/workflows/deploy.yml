@@ -1,0 +1,42 @@
+name: Deploy
+
+# Build-on-server model: no registry. CI ships the source to the box (tar over
+# ssh) and builds the image there. Connection details are Actions VARIABLES; only
+# the SSH key is a SECRET. Runs as the unprivileged `deploy` user.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.event.repository.name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ci
+          chmod 600 ~/.ssh/id_ci
+          ssh-keyscan -p "${{ vars.SSH_PORT }}" "${{ vars.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Ship source to the server (tar over ssh; no rsync needed)
+        run: |
+          ssh -i ~/.ssh/id_ci -p "${{ vars.SSH_PORT }}" \
+            "${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}" "mkdir -p ${{ vars.APP_DIR }}"
+          tar czf - --exclude='./.git' --exclude='./.github' . \
+            | ssh -i ~/.ssh/id_ci -p "${{ vars.SSH_PORT }}" \
+                "${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}" \
+                "tar xzf - -C ${{ vars.APP_DIR }}"
+
+      - name: Build & bring up on the server
+        run: |
+          ssh -i ~/.ssh/id_ci -p "${{ vars.SSH_PORT }}" \
+            "${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}" \
+            "cd ${{ vars.APP_DIR }} && ./scripts/deploy.sh"
