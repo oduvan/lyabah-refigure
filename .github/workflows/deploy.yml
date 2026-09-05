@@ -1,8 +1,12 @@
 name: Deploy
 
 # Build-on-server model: no registry. CI ships the source to the box (tar over
-# ssh) and builds the image there. Connection details are Actions VARIABLES; only
-# the SSH key is a SECRET. Runs as the unprivileged `deploy` user.
+# ssh) and builds the image there, running as the unprivileged `deploy` user.
+#
+# The connection details are not secret — they are the shared server's, and are
+# written out in the README — so they default here and this repo needs only ONE
+# thing configured: the SSH_PRIVATE_KEY secret. Setting the matching Actions
+# variable still overrides any of them.
 
 on:
   push:
@@ -13,6 +17,12 @@ concurrency:
   group: deploy-${{ github.event.repository.name }}
   cancel-in-progress: false
 
+env:
+  SSH_HOST: ${{ vars.SSH_HOST || '172.238.109.66' }}
+  SSH_USER: ${{ vars.SSH_USER || 'deploy' }}
+  SSH_PORT: ${{ vars.SSH_PORT || '22' }}
+  APP_DIR: ${{ vars.APP_DIR || '/home/deploy/services/refigure' }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -20,23 +30,54 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Prepare SSH
+        # Through the environment rather than interpolated into the script, so
+        # the key never becomes part of the command line.
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "::error::SSH_PRIVATE_KEY is not set. Add the shared CI key under Settings → Secrets and variables → Actions → Secrets."
+            exit 1
+          fi
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ci
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ci
           chmod 600 ~/.ssh/id_ci
-          ssh-keyscan -p "${{ vars.SSH_PORT }}" "${{ vars.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Ship source to the server (tar over ssh; no rsync needed)
         run: |
-          ssh -i ~/.ssh/id_ci -p "${{ vars.SSH_PORT }}" \
-            "${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}" "mkdir -p ${{ vars.APP_DIR }}"
+          ssh -i ~/.ssh/id_ci -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" "mkdir -p $APP_DIR"
           tar czf - --exclude='./.git' --exclude='./.github' . \
-            | ssh -i ~/.ssh/id_ci -p "${{ vars.SSH_PORT }}" \
-                "${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}" \
-                "tar xzf - -C ${{ vars.APP_DIR }}"
+            | ssh -i ~/.ssh/id_ci -p "$SSH_PORT" \
+                "$SSH_USER@$SSH_HOST" \
+                "tar xzf - -C $APP_DIR"
 
       - name: Build & bring up on the server
         run: |
-          ssh -i ~/.ssh/id_ci -p "${{ vars.SSH_PORT }}" \
-            "${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}" \
-            "cd ${{ vars.APP_DIR }} && ./scripts/deploy.sh"
+          ssh -i ~/.ssh/id_ci -p "$SSH_PORT" \
+            "$SSH_USER@$SSH_HOST" \
+            "cd $APP_DIR && ./scripts/deploy.sh"
+
+      - name: Wait for the container to report healthy
+        run: |
+          # $APP_DIR is expanded here, by the runner, and arrives as $1 remotely.
+          ssh -i ~/.ssh/id_ci -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+            bash -s "$APP_DIR" <<'REMOTE'
+          set -euo pipefail
+          cd "$1"
+          for _ in $(seq 1 30); do
+            cid=$(docker compose ps -q app || true)
+            if [ -n "$cid" ]; then
+              status=$(docker inspect -f '{{.State.Health.Status}}' "$cid" 2>/dev/null || echo starting)
+              case "$status" in
+                healthy) echo "app is healthy"; exit 0 ;;
+                unhealthy) break ;;
+              esac
+            fi
+            sleep 2
+          done
+          echo "::error::the app did not become healthy"
+          docker compose logs --tail=50 app || true
+          exit 1
+          REMOTE

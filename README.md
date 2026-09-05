@@ -125,7 +125,9 @@ application screenshots on the landing page flip with the rest of the site.
 ## Deploying
 
 Push to `master`; CI ships the source to the server over ssh and runs
-`scripts/deploy.sh`, which builds the image there and brings the service up.
+`scripts/deploy.sh`, which builds the image there and brings the service up. The
+job then waits for the container's healthcheck, so a red run means the service
+is actually down rather than merely un-deployed.
 
 **Server setup** (once, as `deploy`, no root):
 
@@ -135,15 +137,19 @@ scp .env deploy@172.238.109.66:/home/deploy/services/refigure/.env   # from .env
 # DNS: refigure.lyabah.com A → 172.238.109.66, so ACME can issue the cert
 ```
 
-**GitHub setup** — Settings → Secrets and variables → Actions:
+**GitHub setup** — one secret, under Settings → Secrets and variables → Actions
+→ **Secrets**:
 
-| Kind | Name | Value |
-|------|------|-------|
-| Variable | `SSH_HOST` | `172.238.109.66` |
-| Variable | `SSH_USER` | `deploy` |
-| Variable | `SSH_PORT` | `22` |
-| Variable | `APP_DIR` | `/home/deploy/services/refigure` |
-| Secret | `SSH_PRIVATE_KEY` | the shared CI private key |
+| Name | Value |
+|------|-------|
+| `SSH_PRIVATE_KEY` | the shared CI private key |
+
+The connection details are not secret — they are this server's, and they are in
+the table above — so the workflow defaults them:
+`SSH_HOST=172.238.109.66`, `SSH_USER=deploy`, `SSH_PORT=22`,
+`APP_DIR=/home/deploy/services/refigure`. Setting an Actions **variable** of the
+same name overrides the default, which is how you would point a fork at another
+box; nothing needs setting for the normal case.
 
 ### The one change to the template's scripts
 
