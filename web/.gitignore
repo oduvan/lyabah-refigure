@@ -1,0 +1,19 @@
+node_modules
+*.local
+
+# The build output is embedded by the Go server at compile time and produced by
+# the Docker build; only the placeholder below is tracked so `go build` works on
+# a fresh clone.
+dist/*
+!dist/.gitkeep
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

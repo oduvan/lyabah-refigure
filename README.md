@@ -1,179 +1,166 @@
-# lyabah-template
+# refigure.lyabah.com
 
-A starter for a web service that runs on the shared server
-([`lyabah-shared-server`](https://github.com/oduvan/lyabah-shared-server)). It
-attaches to the shared Traefik proxy (HTTPS via Let's Encrypt), the shared
-Postgres, the shared Redis/Valkey, and the shared outbound mail relay — and runs
-none of those itself.
+The marketing site for **Refigure**, the desktop app that keeps tutorial
+screenshots current. A Go binary with a React + Tailwind single-page app
+compiled into it, deployed to the shared server
+([`lyabah-shared-server`](https://github.com/oduvan/lyabah-shared-server))
+behind the shared Traefik proxy.
 
-> **This is a GitHub _template repository_.** Click **“Use this template” →
-> Create a new repository**, name it after your service, and you get your own repo
-> with these files. There is **nothing to stamp or find-and-replace** in the
-> configuration: every per-service value lives in `.env` on the server, and the
-> compose file reads it from there at deploy time. What you *do* edit is your own
-> app — see [What to change in your new repo](#what-to-change-in-your-new-repo).
->
-> The bundled `Dockerfile` is a placeholder app that listens on **8080** and serves
-> `/health`, so you can verify the pipeline before writing real code.
+- **Landing page** — the ten sections of the design, rebuilt as components.
+- **Theme switcher** — light, dark or follow the system, with no flash on load.
+- **Two languages** — English at `/`, Ukrainian at `/uk`, each with its own URL.
+- **Privacy policy** — `/privacy` and `/uk/privacy`.
 
-## Create a service — step by step
+One container, no database, no Redis, no mail relay: the site keeps no state.
 
-1. **Use this template** → create your new repo (e.g. `oduvan/blog`).
-2. **Add the GitHub Actions credentials** to the new repo
-   (Settings → Secrets and variables → Actions) — see [GitHub setup](#github-setup).
-3. **On the server**, create the service dir and its `.env` (holds secrets, so by
-   hand) — see [One-time server setup](#one-time-server-setup-as-the-deploy-user--no-root).
-4. **Point DNS**: an A record for your `SERVICE_HOST` → the server, so ACME can
-   issue the cert.
-5. **Push to `master`** (or run the workflow manually). First deploy provisions the
-   DB, builds the image on the server, brings the app up, and Traefik issues the cert.
+## Layout
 
-No copying, no generator script — `.env` is the single place you configure a service.
-
-## What to change in your new repo
-
-None of the shared-server wiring needs editing — the per-service values live in `.env`
-on the server. These files are yours:
-
-| File | Change it? |
+| Path | What it is |
 |------|-----------|
-| `Dockerfile` | **Yes, required.** It is a placeholder nginx app. Replace it with your real build. |
-| `README.md` | **Yes.** It still describes the template — write your service's own. |
-| `docker-compose.yml` | Only if the app needs more: extra env vars, volumes, an extra container, or the www→apex redirect (commented at the bottom of the file). |
-| `.env.example` | Only if you added env vars — keep it in sync so the server-side `.env` stays documented. |
-| `.github/workflows/deploy.yml` | Normally nothing — but see the branch note below. |
-| `scripts/*.sh` | Normally nothing. |
+| `cmd/server/` | the binary's entry point |
+| `internal/config/` | environment configuration, with working defaults |
+| `internal/server/` | routing, middleware (gzip, CSP, logging), static serving |
+| `web/` | the React app; `web/embed.go` compiles `web/dist` into the binary |
+| `web/src/i18n/` | `en.ts` is the reference dictionary, `uk.ts` is typed against it |
+| `Dockerfile` | three stages: build the site, build the binary, ship ~20 MB |
+| `docker-compose.yml` | one service on the shared network, Traefik labels, no host ports |
+| `scripts/` | server-side provision + deploy (unchanged from the template, bar one note below) |
 
-**Never change** (this is the [integration contract](#integration-contract-the-shared-server--do-not-change)):
-`shared` declared `external`, no published host ports, `traefik.enable=true`, the app
-on port `8080`, and connecting as `DB_ROLE` rather than `provisioner`.
+## Running it locally
 
-Three edits that touch more than one file — miss a place and the deploy silently
-does the wrong thing:
-
-- **Branch.** The workflow runs on `push` to **`master`**. If your new repo's default
-  branch is `main`, either rename it to `master` or change the `branches:` line in
-  `.github/workflows/deploy.yml` — otherwise nothing ever deploys.
-- **A different app port.** Change it in **three** places together: what the app
-  listens on (`Dockerfile`), the compose `healthcheck`, and the
-  `traefik.http.services.…loadbalancer.server.port` label. Staying on `8080` is easier.
-- **A new env var for the app.** Add it in **two** places: the `environment:` block of
-  `docker-compose.yml` (compose does not pass the whole `.env` into the container — on
-  purpose, so the Postgres admin creds stay out of it) and the `.env` on the server.
-  Add it to `.env.example` too.
-
-Tip: deploy once **before** replacing the `Dockerfile`. The placeholder answers on
-`/health`, so a green deploy proves DNS, the cert, Traefik, and the DB provisioning all
-work — then you only have your own app left to debug.
-
-## Integration contract (the shared server — do not change)
-
-| Thing | Value |
-|------|-------|
-| Server IP | `172.238.109.66` |
-| Deploy SSH user | `deploy` (unprivileged, in the `docker` group) |
-| Shared external network | `shared` (declared `external`; the infra owns it) |
-| Postgres | host `postgres`, port `5432`, admin user `provisioner`, admin db `postgres` |
-| Redis/Valkey | host `redis`, port `6379` (use `redis://` URLs) |
-| Mail/SMTP | host `mail`, port `587`, **no auth** (send-only); injected as `SMTP_URL`/`SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM` |
-| Traefik | HTTPS entrypoint `websecure`, cert resolver `letsencrypt`, `exposedbydefault=false` |
-
-**Isolation:** this service owns its own Postgres database + least-privilege role
-(name from `DB_NAME`/`DB_ROLE` in `.env`, created by `scripts/provision-db.sh` with
-the shared admin creds, once, idempotently) and its own Redis logical DB (the number
-in `REDIS_URL`).
-
-## What's here
-
-| File | Purpose |
-|------|---------|
-| `Dockerfile` | builds the app image (placeholder — replace) |
-| `docker-compose.yml` | the app; attaches to `shared`, Traefik labels, no host ports. Reads all per-service values from `.env` (`SERVICE_NAME`, `SERVICE_HOST`, …) |
-| `.env.example` | documents the server-side `.env` (placed by hand, mode 600) — the one place per-service values are set |
-| `scripts/provision-db.sh` | create this service's DB + scoped role (idempotent) |
-| `scripts/deploy.sh` | provision + build from local source + up (no registry) |
-| `.github/workflows/deploy.yml` | ship source to the server (tar/ssh) + run `deploy.sh`, on push to `master` |
-
-## GitHub setup
-
-Add these to the new repo under **Settings → Secrets and variables → Actions**. They
-are the same for every service (the CI key's public half is already authorized on the
-`deploy` user); only `APP_DIR` is per-service.
-
-**Actions variables** (→ Variables tab):
-
-| Variable | Value |
-|----------|-------|
-| `SSH_HOST` | `172.238.109.66` |
-| `SSH_USER` | `deploy` |
-| `SSH_PORT` | `22` |
-| `APP_DIR`  | `/home/deploy/services/<your-service-name>` |
-
-**Actions secret** (→ Secrets tab): `SSH_PRIVATE_KEY` — the shared CI private key.
-
-No registry is used: CI ships the source to the server and the image is built there,
-so there is no GHCR package to configure.
-
-## One-time server setup (as the `deploy` user — no root)
+The frontend and the backend can be run together or separately.
 
 ```bash
-ssh deploy@172.238.109.66 'mkdir -p /home/deploy/services/<your-service-name>'
-# Create .env from .env.example and fill it in: SERVICE_NAME, SERVICE_HOST, the DB
-# password, the shared Postgres admin password, the shared Redis password, and a
-# unique Redis DB number. It is never committed or generated — copy it up by hand:
-scp .env deploy@172.238.109.66:/home/deploy/services/<your-service-name>/.env
-# DNS: point SERVICE_HOST's A record → 172.238.109.66 (so ACME can issue the cert)
+# Everything in one process, exactly as it is deployed:
+npm --prefix web ci
+npm --prefix web run build      # writes web/dist, which the binary embeds
+go run ./cmd/server             # http://localhost:8080
+
+# Or, while working on the frontend — Vite with hot reload, proxying /api:
+go run ./cmd/server &           # serves the API on :8080
+npm --prefix web run dev        # http://localhost:5173
 ```
+
+`REFIGURE_STATIC_DIR=web/dist go run ./cmd/server` serves the site from disk
+instead of the embedded copy, so a rebuild of the frontend shows up without
+recompiling Go.
+
+### Checks
+
+```bash
+go test ./...                   # server behaviour: routing, headers, the API
+go vet ./...
+npm --prefix web run build      # type-checks (tsc -b) and builds
+```
+
+## Configuration
+
+Everything has a default, so the binary runs with no configuration at all and
+the deploy needs no `.env`. To override something in production, place one
+beside `docker-compose.yml` on the server — see `.env.example`.
+
+| Variable | Default | What it does |
+|----------|---------|--------------|
+| `PORT` | `8080` | listen port (the compose healthcheck and Traefik label both assume 8080) |
+| `REFIGURE_ADDR` | `:8080` | full listen address, if a port alone is not enough |
+| `REFIGURE_VERSION` | `1.0.0` | version shown next to the download buttons |
+| `REFIGURE_{MAC,WINDOWS,LINUX}_URL` | the v1.0.0 links | where each download button points |
+| `REFIGURE_{MAC,WINDOWS,LINUX}_SIZE` | `94 MB`, ``, `108 MB` | size shown under each button; may be empty |
+| `REFIGURE_CANONICAL_HOST` | *(unset)* | when set, every other hostname is 301'd here |
+| `REFIGURE_STATIC_DIR` | *(unset)* | serve the site from this directory instead of the embedded build |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
+
+**Shipping a new desktop release** is an `.env` edit and `./scripts/deploy.sh`
+on the server — the version and links are read at startup, so the site itself
+does not need rebuilding.
+
+## HTTP surface
+
+| Route | Response |
+|-------|----------|
+| `/`, `/uk`, `/privacy`, `/uk/privacy` | the app shell, `200` |
+| any other path with no matching file | the app shell, `404` — so the client draws its "not found" page and crawlers are told the truth |
+| `/assets/*` | fingerprinted bundles, `immutable` for a year |
+| `/favicon.svg`, `/robots.txt`, `/sitemap.xml`, `/site.webmanifest`, icons | one hour |
+| `/health` | `healthy`, `no-store` — what the container healthcheck polls |
+| `/api/v1/releases` | `{"version":…,"downloads":[…]}`, cached five minutes |
+
+Responses carry a CSP whose `script-src` is `'self'` plus a **hash of the inline
+theme script**, computed from `index.html` at startup — so the no-flash boot
+script needs no `'unsafe-inline'` and nothing has to be kept in sync by hand.
+Text responses are gzipped in-process; fonts and images are left alone.
+
+## How the two languages work
+
+The URL is the source of truth: `/privacy` is English, `/uk/privacy` is
+Ukrainian, and the switcher in the header is a pair of links, so a language is
+shareable and indexable. Each page emits its own `<title>`, description,
+`<html lang>`, canonical link and `hreflang` alternates.
+
+A visitor who lands on an **unprefixed** URL without having chosen a language
+before is sent to the language their browser asks for. A prefixed URL is an
+explicit request and is never redirected, and neither is anyone who has used
+the switcher (the choice is remembered in `localStorage`).
+
+`web/src/i18n/en.ts` is the reference dictionary and exports the `Dictionary`
+type; `uk.ts` is declared as that type, so a missing or misspelt key fails
+`npm run build` rather than showing up as a blank on the page.
+
+Copy that needs emphasis, inline code or a link is written as
+`**bold**`, `` `code` `` and `[label](href)` and rendered by
+`web/src/components/Rich.tsx` — no markdown dependency, and the translations
+stay readable as plain strings.
+
+## How the theme works
+
+Three states — light, dark, system — kept in `localStorage` under
+`refigure:theme`. An inline script in `index.html` applies the class before
+first paint, so a dark-theme visitor never sees a white flash; it is the only
+inline script on the page and the CSP hashes it.
+
+Colours are semantic custom properties (`--c-bg`, `--c-ink`, `--c-accent` …)
+defined once for light and once for `.dark`, and exposed to Tailwind through
+`@theme inline`. Components name roles, never hex values, which is why the mock
+application screenshots on the landing page flip with the rest of the site.
 
 ## Deploying
 
-- **Normal:** push to `master` → CI ships the source and runs `deploy.sh` (which
-  builds + brings up).
-- **Editing on the server:** `ssh deploy@…`, `cd /home/deploy/services/<your-service-name>`,
-  edit, then `./scripts/deploy.sh` (rebuilds from local source). Commit & push when
-  done so the repo and the server stay in sync.
+Push to `master`; CI ships the source to the server over ssh and runs
+`scripts/deploy.sh`, which builds the image there and brings the service up. The
+job then waits for the container's healthcheck, so a red run means the service
+is actually down rather than merely un-deployed.
 
-## Sending mail
+**Server setup:** none. CI creates the service directory itself, and
+`docker-compose.yml` defaults every value, so there is no `.env` to place by
+hand — see `.env.example` for the overrides one can carry if you ever want it.
 
-Connect to `mail:587` with **no auth and no TLS** — the relay is internal to the
-`shared` network, and it handles TLS and authentication on the way out to SES.
+The only prerequisite outside this repo is DNS: `refigure.lyabah.com` must
+resolve to `172.238.109.66` before the first deploy, so ACME can issue the
+certificate.
 
-**Always set `Date` and `Message-ID` yourself.** A message without them is accepted
-by the relay and by SES, delivered onward — and then silently discarded by Gmail as
-spam, with no bounce and nothing in any log. Many SMTP libraries (Python's
-`smtplib` included) do *not* add these headers for you. A well-formed `From` display
-name and a real body help too.
+**GitHub setup** — one secret, under Settings → Secrets and variables → Actions
+→ **Secrets**:
 
-```python
-import smtplib, email.utils, os
-from email.message import EmailMessage
+| Name | Value |
+|------|-------|
+| `SSH_PRIVATE_KEY` | the shared CI private key |
 
-m = EmailMessage()
-m["From"]       = f"My Service <{os.environ['SMTP_FROM']}>"
-m["To"]         = "someone@example.com"
-m["Subject"]    = "Hello"
-m["Date"]       = email.utils.formatdate(localtime=True)      # required
-m["Message-ID"] = email.utils.make_msgid(domain="lyabah.com") # required
-m.set_content("Body text.")
+The connection details are not secret — they are this server's, and they are in
+the table above — so the workflow defaults them:
+`SSH_HOST=172.238.109.66`, `SSH_USER=deploy`, `SSH_PORT=22`,
+`APP_DIR=/home/deploy/services/refigure`. Setting an Actions **variable** of the
+same name overrides the default, which is how you would point a fork at another
+box; nothing needs setting for the normal case.
 
-with smtplib.SMTP(os.environ["SMTP_HOST"], int(os.environ["SMTP_PORT"])) as s:
-    s.send_message(m)
-```
+### The one change to the template's scripts
 
-Most frameworks (Django, Rails, Nodemailer…) add both headers automatically — this
-mainly bites hand-rolled `smtplib`/`net/smtp` code. To check, look for
-`message-id=<...>` rather than `message-id=<>` in `docker logs shared-infra-mail-1`.
+`scripts/deploy.sh` runs `provision-db.sh` **only when `.env` sets `DB_NAME`**.
+This service has no database, so its `.env` carries no Postgres admin
+credentials; set `DB_NAME`, `DB_ROLE`, `DB_PASSWORD` and `PG_ADMIN_*` there and
+provisioning resumes with no further edits.
 
-## Rules that keep integration smooth
+### The shared-server contract, unchanged
 
-1. Attach to `shared` as `external` — never create it here.
-2. No published host ports — Traefik is the only ingress.
-3. `traefik.enable=true` is mandatory (`exposedbydefault=false`).
-4. The app listens on `8080` (matches the compose healthcheck + Traefik label).
-5. DNS for `SERVICE_HOST` must resolve to the server before deploy (ACME).
-6. Keep the `REDIS_URL` logical DB number unique across services.
-7. The app uses role `DB_ROLE`, never `provisioner`.
-8. Pin client images to the shared majors (`postgres:18`).
-9. Send mail via `mail:587` (no auth); set a real `SMTP_FROM` under a domain
-   listed in the infra's `MAIL_SENDER_DOMAINS`, and always set `Date` +
-   `Message-ID` — see [Sending mail](#sending-mail).
+`shared` is declared `external`, no host ports are published,
+`traefik.enable=true`, and the app listens on `8080` — matching both the compose
+healthcheck and the Traefik service label.

@@ -1,28 +1,39 @@
-name: ${SERVICE_NAME}
+name: ${SERVICE_NAME:-refigure}
 
-# A service that attaches to the shared infrastructure (lyabah-shared-server):
-# joins the `shared` network, advertises its hostname to Traefik, and reaches the
-# shared Postgres/Redis/mail at hosts `postgres` / `redis` / `mail`. It runs NO
-# Traefik/DB/Redis of its own.
+# refigure.lyabah.com — a Go binary with the React site embedded in it.
 #
-# Per-service values (SERVICE_NAME, SERVICE_HOST, …) come from `.env` — Compose
-# interpolates them here at deploy time, so nothing in this file needs editing when
-# you create a service from the template. Just fill in `.env` (see .env.example).
+# It attaches to the shared `shared` network so Traefik can route to it, and
+# runs nothing else: no Postgres, no Redis, no mail. The landing site keeps no
+# state, so the shared Postgres/Redis connection strings are deliberately NOT
+# injected here (see .env.example).
+#
+# Every value defaults to this service's own, so a deploy needs no `.env` at all.
+# One placed beside this file still wins — that is how you override a download
+# link or point a fork at another hostname.
 
 services:
   app:
-    image: ${SERVICE_NAME}:latest   # local tag only — built on the server, never pushed
+    image: ${SERVICE_NAME:-refigure}:latest   # local tag only — built on the server, never pushed
     build: .
     restart: unless-stopped
-    # Only the runtime connection strings are injected — NOT the whole .env, so
-    # the Postgres admin creds never reach the app container.
+    # List form on purpose: a name with no value is passed through only when
+    # `.env` actually defines it. The `KEY: ${KEY:-}` form would instead set it
+    # to an empty string, and the binary could not tell "not configured" from
+    # "deliberately blank" (which is what REFIGURE_WINDOWS_SIZE is).
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      SMTP_URL: ${SMTP_URL}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_FROM: ${SMTP_FROM}
+      # Which release the download buttons point at. Shipping a new build of
+      # the desktop app is an .env edit plus `./scripts/deploy.sh` — the site
+      # itself does not need rebuilding.
+      - REFIGURE_VERSION
+      - REFIGURE_MAC_URL
+      - REFIGURE_MAC_SIZE
+      - REFIGURE_WINDOWS_URL
+      - REFIGURE_WINDOWS_SIZE
+      - REFIGURE_LINUX_URL
+      - REFIGURE_LINUX_SIZE
+      # Set to SERVICE_HOST to 301 every other hostname to the canonical one.
+      - REFIGURE_CANONICAL_HOST
+      - LOG_LEVEL
     networks:
       - shared
     healthcheck:
@@ -32,20 +43,10 @@ services:
       retries: 5
     labels:
       - traefik.enable=true
-      - traefik.http.routers.${SERVICE_NAME}.rule=Host(`${SERVICE_HOST}`)
-      - traefik.http.routers.${SERVICE_NAME}.entrypoints=websecure
-      - traefik.http.routers.${SERVICE_NAME}.tls.certresolver=letsencrypt
-      - traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port=8080
-      # ── Apex domain + www (optional) ───────────────────────────────────────
-      # SERVICE_HOST can be an apex (e.g. lyabah.com) — nothing special needed.
-      # To ALSO serve www and redirect it to the apex, replace the rule line above
-      # with the next one and add the middleware (note: '$' is doubled to '$$' so
-      # Compose doesn't interpolate it):
-      #   - traefik.http.routers.${SERVICE_NAME}.rule=Host(`${SERVICE_HOST}`) || Host(`www.${SERVICE_HOST}`)
-      #   - traefik.http.routers.${SERVICE_NAME}.middlewares=${SERVICE_NAME}-wwwredir
-      #   - traefik.http.middlewares.${SERVICE_NAME}-wwwredir.redirectregex.regex=^https://www\.(.+)
-      #   - traefik.http.middlewares.${SERVICE_NAME}-wwwredir.redirectregex.replacement=https://$${1}
-      #   - traefik.http.middlewares.${SERVICE_NAME}-wwwredir.redirectregex.permanent=true
+      - traefik.http.routers.${SERVICE_NAME:-refigure}.rule=Host(`${SERVICE_HOST:-refigure.lyabah.com}`)
+      - traefik.http.routers.${SERVICE_NAME:-refigure}.entrypoints=websecure
+      - traefik.http.routers.${SERVICE_NAME:-refigure}.tls.certresolver=letsencrypt
+      - traefik.http.services.${SERVICE_NAME:-refigure}.loadbalancer.server.port=8080
 
 networks:
   # External — owned by the infra repo. Never created here.
