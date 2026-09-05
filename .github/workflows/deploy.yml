@@ -36,7 +36,12 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           if [ -z "$SSH_PRIVATE_KEY" ]; then
-            echo "::error::SSH_PRIVATE_KEY is not set. Add the shared CI key under Settings → Secrets and variables → Actions → Secrets."
+            # The runner masks every secret value, so printing the context
+            # leaks nothing and names exactly what this workflow can see —
+            # which separates "wrong name" from "wrong scope" in one run.
+            echo "Secrets this workflow can see (values masked by the runner):"
+            echo '${{ toJSON(secrets) }}'
+            echo "::error::SSH_PRIVATE_KEY is empty. If it is listed above under another name, rename it; if the list has only github_token, the secret is set somewhere this workflow cannot read — an Environment or an org secret this repository has not been granted, rather than Settings → Secrets and variables → Actions → Secrets."
             exit 1
           fi
           mkdir -p ~/.ssh
