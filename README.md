@@ -55,8 +55,9 @@ npm --prefix web run build      # type-checks (tsc -b) and builds
 
 ## Configuration
 
-Everything has a default, so the binary runs with no configuration at all.
-Production values live in `.env` on the server — see `.env.example`.
+Everything has a default, so the binary runs with no configuration at all and
+the deploy needs no `.env`. To override something in production, place one
+beside `docker-compose.yml` on the server — see `.env.example`.
 
 | Variable | Default | What it does |
 |----------|---------|--------------|
@@ -129,13 +130,13 @@ Push to `master`; CI ships the source to the server over ssh and runs
 job then waits for the container's healthcheck, so a red run means the service
 is actually down rather than merely un-deployed.
 
-**Server setup** (once, as `deploy`, no root):
+**Server setup:** none. CI creates the service directory itself, and
+`docker-compose.yml` defaults every value, so there is no `.env` to place by
+hand — see `.env.example` for the overrides one can carry if you ever want it.
 
-```bash
-ssh deploy@172.238.109.66 'mkdir -p /home/deploy/services/refigure'
-scp .env deploy@172.238.109.66:/home/deploy/services/refigure/.env   # from .env.example
-# DNS: refigure.lyabah.com A → 172.238.109.66, so ACME can issue the cert
-```
+The only prerequisite outside this repo is DNS: `refigure.lyabah.com` must
+resolve to `172.238.109.66` before the first deploy, so ACME can issue the
+certificate.
 
 **GitHub setup** — one secret, under Settings → Secrets and variables → Actions
 → **Secrets**:

@@ -1,4 +1,4 @@
-name: ${SERVICE_NAME}
+name: ${SERVICE_NAME:-refigure}
 
 # refigure.lyabah.com — a Go binary with the React site embedded in it.
 #
@@ -7,11 +7,13 @@ name: ${SERVICE_NAME}
 # state, so the shared Postgres/Redis connection strings are deliberately NOT
 # injected here (see .env.example).
 #
-# Per-service values come from `.env`; Compose interpolates them at deploy time.
+# Every value defaults to this service's own, so a deploy needs no `.env` at all.
+# One placed beside this file still wins — that is how you override a download
+# link or point a fork at another hostname.
 
 services:
   app:
-    image: ${SERVICE_NAME}:latest   # local tag only — built on the server, never pushed
+    image: ${SERVICE_NAME:-refigure}:latest   # local tag only — built on the server, never pushed
     build: .
     restart: unless-stopped
     # List form on purpose: a name with no value is passed through only when
@@ -41,10 +43,10 @@ services:
       retries: 5
     labels:
       - traefik.enable=true
-      - traefik.http.routers.${SERVICE_NAME}.rule=Host(`${SERVICE_HOST}`)
-      - traefik.http.routers.${SERVICE_NAME}.entrypoints=websecure
-      - traefik.http.routers.${SERVICE_NAME}.tls.certresolver=letsencrypt
-      - traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port=8080
+      - traefik.http.routers.${SERVICE_NAME:-refigure}.rule=Host(`${SERVICE_HOST:-refigure.lyabah.com}`)
+      - traefik.http.routers.${SERVICE_NAME:-refigure}.entrypoints=websecure
+      - traefik.http.routers.${SERVICE_NAME:-refigure}.tls.certresolver=letsencrypt
+      - traefik.http.services.${SERVICE_NAME:-refigure}.loadbalancer.server.port=8080
 
 networks:
   # External — owned by the infra repo. Never created here.

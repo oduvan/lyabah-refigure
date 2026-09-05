@@ -11,10 +11,17 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-[ -f .env ] || { echo ".env missing in $(pwd) — create it from .env.example"; exit 1; }
 chmod +x scripts/*.sh
 
-DB_NAME="$(sed -n 's/^[[:space:]]*DB_NAME[[:space:]]*=[[:space:]]*//p' .env | tail -n1)"
+# `.env` is optional: docker-compose.yml defaults every value this service
+# needs. One is only required to override something — a download link, the
+# hostname, or to give the service a database.
+if [ -f .env ]; then
+  DB_NAME="$(sed -n 's/^[[:space:]]*DB_NAME[[:space:]]*=[[:space:]]*//p' .env | tail -n1)"
+else
+  echo "No .env in $(pwd) — using the defaults in docker-compose.yml."
+  DB_NAME=""
+fi
 if [ -n "${DB_NAME}" ]; then
   ./scripts/provision-db.sh
 else
