@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e1013" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Refigure" />
+    <title>Refigure — annotate once, update forever</title>
+    <meta
+      name="description"
+      content="Refigure keeps tutorial screenshots current. Arrows, labels and crops are stored as data, not baked into pixels."
+    />
+    <script>
+      // Runs before first paint so a dark-theme visitor never sees a white
+      // flash. Kept in sync with src/lib/theme.tsx (THEME_STORAGE_KEY).
+      (function () {
+        try {
+          var stored = localStorage.getItem('refigure:theme')
+          var theme = stored === 'light' || stored === 'dark' ? stored : null
+          var dark =
+            theme === 'dark' ||
+            (theme === null &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+          var root = document.documentElement
+          root.classList.toggle('dark', dark)
+          // Leave color-scheme open with no explicit choice, so
+          // prefers-color-scheme keeps reporting the OS setting.
+          root.style.colorScheme = theme === null ? 'light dark' : theme
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
