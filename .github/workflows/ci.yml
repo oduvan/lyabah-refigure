@@ -9,8 +9,12 @@ on:
     branches: [master]
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Keyed per pull request so a follow-up push supersedes the run it replaces,
+  # and per commit on master so a master run is never cancelled — every commit
+  # that can deploy has to be verified. Merging produces a push run and a brief
+  # pull_request run; separate keys stop them from killing each other.
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   go:
