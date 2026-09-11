@@ -196,7 +196,6 @@ export const en = {
   footer: {
     github: 'GitHub',
     privacy: 'Privacy',
-    contact: 'Contact',
   },
 
   privacy: {
