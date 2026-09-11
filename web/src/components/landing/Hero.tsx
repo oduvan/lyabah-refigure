@@ -1,5 +1,5 @@
 import { useI18n } from '../../i18n'
-import { downloadFor, usePlatform, useRelease } from '../../lib/releases'
+import { downloadFor, isStoreLink, usePlatform, useRelease } from '../../lib/releases'
 import { AnnotatedScreenshot } from './MockApp'
 import { Section } from './primitives'
 
@@ -9,9 +9,11 @@ export function Hero() {
   const platform = usePlatform()
   const download = downloadFor(release, platform)
 
-  const label = { mac: t.download.mac, windows: t.download.windows, linux: t.download.linux }[
-    platform
-  ]
+  const label = {
+    mac: t.download.mac,
+    windows: isStoreLink(download.url) ? t.download.windows : t.download.windowsDirect,
+    linux: t.download.linux,
+  }[platform]
   const meta = [release.version, download.size].filter(Boolean).join(' · ')
 
   return (

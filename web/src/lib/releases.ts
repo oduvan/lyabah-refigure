@@ -23,16 +23,34 @@ export const FALLBACK_RELEASE: Release = {
   downloads: [
     {
       platform: 'mac',
-      url: 'https://github.com/oduvan/refigure/releases/download/v1.0.0/Refigure-1.0.0-universal.dmg',
-      size: '94 MB',
+      url: 'https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0-universal.dmg',
+      size: '179 MB',
     },
-    { platform: 'windows', url: 'https://apps.microsoft.com/detail/refigure', size: '' },
+    {
+      platform: 'windows',
+      url: 'https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-Setup-1.0.0.exe',
+      size: '84 MB',
+    },
     {
       platform: 'linux',
-      url: 'https://github.com/oduvan/refigure/releases/download/v1.0.0/Refigure-1.0.0-x86_64.AppImage',
-      size: '108 MB',
+      url: 'https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0.AppImage',
+      size: '111 MB',
     },
   ],
+}
+
+/**
+ * The Windows button says "Get it from the Microsoft Store" only when it
+ * actually points there. The release publishes a direct installer, but the
+ * server still lets a store listing be configured, so the label follows the
+ * link rather than being assumed.
+ */
+export function isStoreLink(url: string): boolean {
+  try {
+    return new URL(url).hostname.endsWith('microsoft.com')
+  } catch {
+    return false
+  }
 }
 
 const PLATFORMS: Platform[] = ['mac', 'windows', 'linux']

@@ -13,6 +13,7 @@ import (
 	"testing/fstest"
 
 	"github.com/oduvan/lyabah-refigure/internal/config"
+	"github.com/oduvan/lyabah-refigure/internal/releases"
 )
 
 const indexHTML = `<!doctype html><html><head>` +
@@ -37,6 +38,10 @@ func newTestServer(t *testing.T, mutate func(*config.Config)) http.Handler {
 	if err != nil {
 		t.Fatalf("config.Load: %v", err)
 	}
+	// No repository means the provider never reaches the network: these tests
+	// exercise the HTTP surface, and internal/releases covers the GitHub side
+	// against a stub. Without this the suite would depend on api.github.com.
+	cfg.ReleasesRepo = ""
 	if mutate != nil {
 		mutate(&cfg)
 	}
@@ -78,14 +83,14 @@ func TestReleasesJSON(t *testing.T) {
 		t.Errorf("Content-Type = %q", ct)
 	}
 
-	var payload config.Release
+	var payload releases.Release
 	if err := json.NewDecoder(res.Body).Decode(&payload); err != nil {
 		t.Fatalf("decoding the payload: %v", err)
 	}
 	if payload.Version == "" {
 		t.Error("version is empty")
 	}
-	want := map[string]bool{"mac": false, "windows": false, "linux": false}
+	want := map[releases.Platform]bool{releases.Mac: false, releases.Windows: false, releases.Linux: false}
 	for _, d := range payload.Downloads {
 		if _, ok := want[d.Platform]; !ok {
 			t.Errorf("unexpected platform %q", d.Platform)

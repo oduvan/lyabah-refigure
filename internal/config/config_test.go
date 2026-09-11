@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/oduvan/lyabah-refigure/internal/releases"
+)
 
 func TestLoadDefaults(t *testing.T) {
 	cfg, err := Load()
@@ -10,11 +14,11 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.Addr != defaultAddr {
 		t.Errorf("Addr = %q, want %q", cfg.Addr, defaultAddr)
 	}
-	if cfg.Release.Version != defaultVersion {
-		t.Errorf("Version = %q, want %q", cfg.Release.Version, defaultVersion)
+	if cfg.ReleaseFallback.Version != defaultVersion {
+		t.Errorf("Version = %q, want %q", cfg.ReleaseFallback.Version, defaultVersion)
 	}
-	if len(cfg.Release.Downloads) != len(defaultDownloads) {
-		t.Fatalf("got %d downloads, want %d", len(cfg.Release.Downloads), len(defaultDownloads))
+	if len(cfg.ReleaseFallback.Downloads) != len(defaultDownloads) {
+		t.Fatalf("got %d downloads, want %d", len(cfg.ReleaseFallback.Downloads), len(defaultDownloads))
 	}
 }
 
@@ -54,11 +58,11 @@ func TestReleaseOverrides(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if cfg.Release.Version != "2.1.0" {
-		t.Errorf("Version = %q, want 2.1.0", cfg.Release.Version)
+	if cfg.ReleaseFallback.Version != "2.1.0" {
+		t.Errorf("Version = %q, want 2.1.0", cfg.ReleaseFallback.Version)
 	}
-	byPlatform := map[string]Download{}
-	for _, d := range cfg.Release.Downloads {
+	byPlatform := map[releases.Platform]releases.Download{}
+	for _, d := range cfg.ReleaseFallback.Downloads {
 		byPlatform[d.Platform] = d
 	}
 	if got := byPlatform["mac"]; got.URL != "https://example.com/Refigure-2.1.0.dmg" || got.Size != "101 MB" {
