@@ -115,11 +115,13 @@ func handleHealth(w http.ResponseWriter, _ *http.Request) {
 
 func releaseProvider(cfg config.Config, log *slog.Logger) *releases.Provider {
 	return releases.New(releases.Options{
-		Repo:     cfg.ReleasesRepo,
-		TTL:      cfg.ReleasesTTL,
-		Token:    cfg.GitHubToken,
-		Fallback: cfg.ReleaseFallback,
-		Logger:   log,
+		Repo:      cfg.ReleasesRepo,
+		TTL:       cfg.ReleasesTTL,
+		Token:     cfg.GitHubToken,
+		Fallback:  cfg.ReleaseFallback,
+		Overrides: cfg.ReleaseOverrides,
+		Version:   cfg.ReleaseVersion,
+		Logger:    log,
 	})
 }
 

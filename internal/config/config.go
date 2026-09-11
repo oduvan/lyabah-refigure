@@ -25,10 +25,15 @@ type Config struct {
 	// one canonical origin when Traefik also routes, say, the www name.
 	CanonicalHost string
 	// ReleaseFallback is what the download buttons show before GitHub has
-	// answered, and whenever it cannot. Values set in the environment also
-	// override what the release says, which is the escape hatch for a platform
-	// published somewhere other than a GitHub asset (a store listing, say).
+	// answered, and whenever it cannot.
 	ReleaseFallback releases.Release
+	// ReleaseOverrides are the values explicitly set in the environment. They
+	// beat whatever the release says — the escape hatch for a platform
+	// published somewhere other than a GitHub asset (a Microsoft Store
+	// listing, say, where the release also ships a direct installer).
+	ReleaseOverrides []releases.Override
+	// ReleaseVersion, when set, replaces the version the release tag implies.
+	ReleaseVersion string
 	// ReleasesRepo is the "owner/name" whose latest release drives the buttons.
 	ReleasesRepo string
 	// ReleasesTTL bounds how often GitHub is asked.
@@ -96,6 +101,8 @@ func Load() (Config, error) {
 	}
 
 	cfg.ReleaseFallback = loadReleaseFallback()
+	cfg.ReleaseOverrides = loadReleaseOverrides()
+	cfg.ReleaseVersion = strings.TrimSpace(os.Getenv("REFIGURE_VERSION"))
 	cfg.ReleasesRepo = envOr("REFIGURE_RELEASES_REPO", defaultRepo)
 	cfg.GitHubToken = strings.TrimSpace(os.Getenv("GITHUB_TOKEN"))
 	cfg.ReleasesTTL = defaultTTL
@@ -130,6 +137,35 @@ func loadReleaseFallback() releases.Release {
 		})
 	}
 	return rel
+}
+
+// loadReleaseOverrides reads only what the environment actually sets. The
+// built-in defaults must not appear here: they belong in the fallback, and an
+// override beats the real release, so a default leaking in would permanently
+// pin the buttons to the version this binary was built with.
+func loadReleaseOverrides() []releases.Override {
+	var out []releases.Override
+	for _, platform := range releases.Platforms {
+		key := strings.ToUpper(string(platform))
+		url, urlSet := os.LookupEnv("REFIGURE_" + key + "_URL")
+		size, sizeSet := os.LookupEnv("REFIGURE_" + key + "_SIZE")
+		url = strings.TrimSpace(url)
+		// An empty URL is not a deliberate choice — it would render a dead
+		// button — so it is treated as unset.
+		if url == "" {
+			urlSet = false
+		}
+		if !urlSet && !sizeSet {
+			continue
+		}
+		out = append(out, releases.Override{
+			Platform: platform,
+			URL:      url,
+			Size:     size,
+			SizeSet:  sizeSet,
+		})
+	}
+	return out
 }
 
 func envOr(key, fallback string) string {

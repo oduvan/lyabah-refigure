@@ -252,3 +252,86 @@ func TestRejectsAReleaseWithNothingToDownload(t *testing.T) {
 		t.Errorf("metadata-only release produced %d downloads", len(got.Downloads))
 	}
 }
+
+// The case this was built for: the release ships a direct Windows installer,
+// but Windows visitors should be sent to the Microsoft Store instead. Before
+// the override was applied after the fetch, the release simply won and the
+// configured store link was silently ignored.
+func TestOverrideBeatsTheRelease(t *testing.T) {
+	release := fromGitHub(loadFixture(t))
+	store := "https://apps.microsoft.com/detail/refigure"
+
+	got := byPlatform(applyOverrides(release, "", []Override{
+		{Platform: Windows, URL: store, Size: "", SizeSet: true},
+	}))
+
+	if got[Windows].URL != store {
+		t.Errorf("windows url = %q, want the store listing %q", got[Windows].URL, store)
+	}
+	if got[Windows].Size != "" {
+		t.Errorf("windows size = %q, want empty — a store listing has no file", got[Windows].Size)
+	}
+	// The platforms not overridden must still come from the release.
+	if !contains(got[Mac].URL, "Refigure-1.0.0-universal.dmg") {
+		t.Errorf("mac should still come from the release, got %q", got[Mac].URL)
+	}
+	if got[Linux].Size != "111 MB" {
+		t.Errorf("linux size = %q, want the release's 111 MB", got[Linux].Size)
+	}
+}
+
+// A size override alone must not wipe the URL, and vice versa.
+func TestPartialOverrides(t *testing.T) {
+	release := fromGitHub(loadFixture(t))
+
+	sizeOnly := byPlatform(applyOverrides(release, "", []Override{
+		{Platform: Mac, SizeSet: true, Size: "about 180 MB"},
+	}))
+	if sizeOnly[Mac].Size != "about 180 MB" {
+		t.Errorf("size = %q, want the override", sizeOnly[Mac].Size)
+	}
+	if !contains(sizeOnly[Mac].URL, "Refigure-1.0.0-universal.dmg") {
+		t.Errorf("a size override cleared the url: %q", sizeOnly[Mac].URL)
+	}
+
+	urlOnly := byPlatform(applyOverrides(release, "", []Override{
+		{Platform: Mac, URL: "https://example.com/custom.dmg"},
+	}))
+	if urlOnly[Mac].URL != "https://example.com/custom.dmg" {
+		t.Errorf("url = %q, want the override", urlOnly[Mac].URL)
+	}
+	if urlOnly[Mac].Size != "179 MB" {
+		t.Errorf("a url override cleared the size: %q", urlOnly[Mac].Size)
+	}
+}
+
+func TestVersionOverride(t *testing.T) {
+	release := fromGitHub(loadFixture(t))
+	if got := applyOverrides(release, "2.0.0-beta", nil); got.Version != "2.0.0-beta" {
+		t.Errorf("version = %q, want the override", got.Version)
+	}
+	if got := applyOverrides(release, "", nil); got.Version != "1.0.0" {
+		t.Errorf("with no override, version = %q, want the release's 1.0.0", got.Version)
+	}
+}
+
+// An override survives every path Current can take, including a GitHub outage.
+func TestOverrideSurvivesAFailedFetch(t *testing.T) {
+	store := "https://apps.microsoft.com/detail/refigure"
+	overrides := []Override{{Platform: Windows, URL: store, SizeSet: true}}
+
+	var hits atomic.Int32
+	failing := serveFixture(t, &hits, http.StatusInternalServerError)
+	defer failing.Close()
+
+	fallback := Release{
+		Version:   "1.0.0",
+		Downloads: []Download{{Platform: Windows, URL: "https://example.com/setup.exe", Size: "84 MB"}},
+	}
+	p := New(Options{Repo: "oduvan/lyabah-refigure", TTL: time.Hour, Fallback: fallback, Overrides: overrides})
+	p.client = &http.Client{Transport: rewriteTo(failing.URL)}
+
+	if got := byPlatform(p.Current(context.Background()))[Windows]; got.URL != store {
+		t.Errorf("with GitHub down, windows url = %q, want the store listing", got.URL)
+	}
+}

@@ -16,12 +16,14 @@ import (
 // down, the last good answer is served, and the configured fallback before
 // there has ever been one.
 type Provider struct {
-	repo     string // "owner/name"
-	ttl      time.Duration
-	token    string
-	fallback Release
-	client   *http.Client
-	log      *slog.Logger
+	repo      string // "owner/name"
+	ttl       time.Duration
+	token     string
+	fallback  Release
+	overrides []Override
+	version   string
+	client    *http.Client
+	log       *slog.Logger
 
 	mu sync.Mutex
 	// hasCached tracks whether `cached` holds a good answer, which is not the
@@ -36,12 +38,19 @@ type Provider struct {
 // Options configure a Provider. Repo is required; everything else has a
 // sensible default.
 type Options struct {
-	Repo     string
-	TTL      time.Duration
-	Token    string
+	Repo string
+	TTL  time.Duration
+	// Token is optional and only lifts GitHub's anonymous rate limit.
+	Token string
+	// Fallback is shown before GitHub has answered, and whenever it cannot.
 	Fallback Release
-	Client   *http.Client
-	Logger   *slog.Logger
+	// Overrides beat whatever the release says. Applied on every read, so a
+	// store listing survives a release that also ships an installer.
+	Overrides []Override
+	// Version, when set, replaces the version the release tag implies.
+	Version string
+	Client  *http.Client
+	Logger  *slog.Logger
 }
 
 const (
@@ -52,12 +61,14 @@ const (
 
 func New(opts Options) *Provider {
 	p := &Provider{
-		repo:     strings.Trim(opts.Repo, "/"),
-		ttl:      opts.TTL,
-		token:    opts.Token,
-		fallback: opts.Fallback,
-		client:   opts.Client,
-		log:      opts.Logger,
+		repo:      strings.Trim(opts.Repo, "/"),
+		ttl:       opts.TTL,
+		token:     opts.Token,
+		fallback:  opts.Fallback,
+		overrides: opts.Overrides,
+		version:   opts.Version,
+		client:    opts.Client,
+		log:       opts.Logger,
 	}
 	if p.ttl <= 0 {
 		p.ttl = defaultTTL
@@ -79,7 +90,7 @@ func (p *Provider) Current(ctx context.Context) Release {
 	defer p.mu.Unlock()
 
 	if p.hasCached && time.Since(p.fetchedAt) < p.ttl {
-		return p.cached
+		return applyOverrides(p.cached, p.version, p.overrides)
 	}
 
 	fetched, err := p.fetch(ctx)
@@ -89,18 +100,18 @@ func (p *Provider) Current(ctx context.Context) Release {
 		// log with one line per TTL.
 		p.log.Warn("could not refresh the release from GitHub", "repo", p.repo, "error", err)
 		if !p.hasCached {
-			return p.fallback
+			return applyOverrides(p.fallback, p.version, p.overrides)
 		}
 		// Back off for a full TTL rather than hammering a failing API.
 		p.fetchedAt = time.Now()
-		return p.cached
+		return applyOverrides(p.cached, p.version, p.overrides)
 	}
 
 	p.lastErr = nil
 	p.cached = merge(fetched, p.fallback)
 	p.hasCached = true
 	p.fetchedAt = time.Now()
-	return p.cached
+	return applyOverrides(p.cached, p.version, p.overrides)
 }
 
 func (p *Provider) fetch(ctx context.Context) (Release, error) {
