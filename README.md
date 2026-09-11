@@ -86,9 +86,19 @@ keeps serving the last good release rather than blanking the buttons — so a
 GitHub outage is invisible. Nothing to redeploy, and no `.env` to edit.
 
 A platform published somewhere other than a GitHub asset — a Microsoft Store
-listing, say — is set with the `REFIGURE_*_URL` overrides below, which win over
-the release. The Windows button calls itself "Get it from the Microsoft Store"
-only when its link actually points there.
+listing, say — is set with the `REFIGURE_*_URL` overrides below. They are
+applied after the release is read, so they win even when the release also ships
+an installer for that platform, and they survive a GitHub outage. To send
+Windows visitors to the Store while the release still carries a `.exe`:
+
+```
+REFIGURE_WINDOWS_URL=https://apps.microsoft.com/detail/refigure
+REFIGURE_WINDOWS_SIZE=
+```
+
+The empty size is deliberate: a store listing has no file to state the size of.
+The button then reads "Get it from the Microsoft Store" — that wording follows
+the link, so it is never claimed for a direct download.
 
 ## HTTP surface
 

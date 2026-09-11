@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
-import { CONTACT_EMAIL, REPO_URL } from '../lib/links'
+import { REPO_URL } from '../lib/links'
 
 export function Footer() {
   const { t, path } = useI18n()
@@ -21,12 +21,6 @@ export function Footer() {
         <Link to={path('/privacy')} className="transition-colors hover:text-ink">
           {t.footer.privacy}
         </Link>
-        <a
-          href={`mailto:${CONTACT_EMAIL}`}
-          className="transition-colors hover:text-ink"
-        >
-          {t.footer.contact}
-        </a>
         <span className="ml-auto tabular-nums">© {year}</span>
       </div>
     </footer>

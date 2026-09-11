@@ -268,6 +268,7 @@ func TestUnbuiltFrontendIsObvious(t *testing.T) {
 	if err != nil {
 		t.Fatalf("config.Load: %v", err)
 	}
+	cfg.ReleasesRepo = "" // keep the suite off the network, as above
 	h := New(cfg, slog.New(slog.DiscardHandler), fstest.MapFS{}, false).Handler()
 
 	res := get(t, h, "/", nil)

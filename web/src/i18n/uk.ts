@@ -192,7 +192,6 @@ export const uk: Dictionary = {
   footer: {
     github: 'GitHub',
     privacy: 'Приватність',
-    contact: 'Контакти',
   },
 
   privacy: {

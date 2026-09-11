@@ -165,9 +165,7 @@ func fromGitHub(r ghRelease) Release {
 		})
 	}
 
-	sort.Slice(out.Downloads, func(i, j int) bool {
-		return indexOf(out.Downloads[i].Platform) < indexOf(out.Downloads[j].Platform)
-	})
+	sortByPlatform(out.Downloads)
 	return out
 }
 
@@ -180,8 +178,8 @@ func indexOf(p Platform) int {
 	return len(Platforms)
 }
 
-// merge fills anything the release did not supply from fallback, so a missing
-// Windows build (or a store listing configured by hand) still renders.
+// merge fills anything the release did not supply from fallback, so a platform
+// with no asset in the release still renders.
 func merge(primary, fallback Release) Release {
 	out := Release{Version: primary.Version}
 	if out.Version == "" {
@@ -197,8 +195,68 @@ func merge(primary, fallback Release) Release {
 			out.Downloads = append(out.Downloads, d)
 		}
 	}
-	sort.Slice(out.Downloads, func(i, j int) bool {
-		return indexOf(out.Downloads[i].Platform) < indexOf(out.Downloads[j].Platform)
-	})
+	sortByPlatform(out.Downloads)
 	return out
+}
+
+// Override replaces part of what a release said about one platform. It exists
+// for a download that is not a GitHub asset at all — a Microsoft Store listing
+// being the case in point: the release publishes a .exe, but the site may be
+// told to send Windows visitors to the Store instead.
+type Override struct {
+	Platform Platform
+	// URL, when set, replaces the release's link for this platform.
+	URL string
+	// Size replaces the release's size. SizeSet distinguishes "leave it alone"
+	// from "deliberately blank", which is what a store listing wants — there is
+	// no file behind it to state the size of.
+	Size    string
+	SizeSet bool
+}
+
+// applyOverrides runs last, so what an operator configured beats what the
+// release happens to contain.
+func applyOverrides(r Release, version string, overrides []Override) Release {
+	if version != "" {
+		r.Version = version
+	}
+	if len(overrides) == 0 {
+		return r
+	}
+
+	downloads := make([]Download, len(r.Downloads))
+	copy(downloads, r.Downloads)
+
+	for _, o := range overrides {
+		at := -1
+		for i := range downloads {
+			if downloads[i].Platform == o.Platform {
+				at = i
+				break
+			}
+		}
+		if at == -1 {
+			// A platform the release says nothing about — a store-only
+			// platform, for instance.
+			if o.URL != "" {
+				downloads = append(downloads, Download{Platform: o.Platform, URL: o.URL, Size: o.Size})
+			}
+			continue
+		}
+		if o.URL != "" {
+			downloads[at].URL = o.URL
+		}
+		if o.SizeSet {
+			downloads[at].Size = o.Size
+		}
+	}
+
+	sortByPlatform(downloads)
+	return Release{Version: r.Version, Downloads: downloads}
+}
+
+func sortByPlatform(downloads []Download) {
+	sort.Slice(downloads, func(i, j int) bool {
+		return indexOf(downloads[i].Platform) < indexOf(downloads[j].Platform)
+	})
 }
