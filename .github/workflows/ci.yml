@@ -1,0 +1,62 @@
+name: CI
+
+# Guards master. The deploy builds on the server, so without this a broken
+# commit is only discovered mid-deploy, with the service already coming down.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # web/dist holds only the tracked .gitkeep here, which is exactly what
+      # `//go:embed all:dist` needs to compile without a frontend build.
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test ./...
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l ./cmd ./internal ./web)
+          if [ -n "$unformatted" ]; then
+            echo "::error::not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      # Not a test suite — the landing page has none. `npm run build` runs
+      # `tsc -b` first, so a type error or a translation key that exists in
+      # en.ts but not uk.ts fails here rather than halfway through a deploy.
+      - run: npm run build
