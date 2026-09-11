@@ -1,0 +1,23 @@
+{
+  "tag_name": "v1.0.0",
+  "name": "1.0.0",
+  "draft": false,
+  "prerelease": false,
+  "html_url": "https://github.com/oduvan/lyabah-refigure/releases/tag/v1.0.0",
+  "assets": [
+    {"name": "latest-linux-arm64.yml", "size": 534, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/latest-linux-arm64.yml"},
+    {"name": "latest-linux.yml", "size": 522, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/latest-linux.yml"},
+    {"name": "latest-mac.yml", "size": 520, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/latest-mac.yml"},
+    {"name": "latest.yml", "size": 344, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/latest.yml"},
+    {"name": "Refigure-1.0.0-amd64.deb", "size": 80899952, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0-amd64.deb"},
+    {"name": "Refigure-1.0.0-arm64.AppImage", "size": 116445440, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0-arm64.AppImage"},
+    {"name": "Refigure-1.0.0-arm64.deb", "size": 79603668, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0-arm64.deb"},
+    {"name": "Refigure-1.0.0-universal-mac.zip", "size": 181466039, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0-universal-mac.zip"},
+    {"name": "Refigure-1.0.0-universal-mac.zip.blockmap", "size": 189875, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0-universal-mac.zip.blockmap"},
+    {"name": "Refigure-1.0.0-universal.dmg", "size": 187676765, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0-universal.dmg"},
+    {"name": "Refigure-1.0.0-universal.dmg.blockmap", "size": 197094, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0-universal.dmg.blockmap"},
+    {"name": "Refigure-1.0.0.AppImage", "size": 116058952, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0.AppImage"},
+    {"name": "Refigure-Setup-1.0.0.exe", "size": 87868084, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-Setup-1.0.0.exe"},
+    {"name": "Refigure-Setup-1.0.0.exe.blockmap", "size": 92869, "browser_download_url": "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-Setup-1.0.0.exe.blockmap"}
+  ]
+}

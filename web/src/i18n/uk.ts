@@ -183,6 +183,7 @@ export const uk: Dictionary = {
     mac: 'Завантажити для macOS',
     macMeta: 'Intel і Apple silicon',
     windows: 'Завантажити з Microsoft Store',
+    windowsDirect: 'Завантажити для Windows',
     windowsMeta: 'Windows 10 і новіші',
     linux: 'Завантажити для Linux',
     linuxMeta: 'AppImage, .deb',

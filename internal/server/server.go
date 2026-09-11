@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/oduvan/lyabah-refigure/internal/config"
+	"github.com/oduvan/lyabah-refigure/internal/releases"
 )
 
 const (
@@ -34,7 +35,7 @@ type Server struct {
 func New(cfg config.Config, log *slog.Logger, assets fs.FS, built bool) *Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+healthPath, handleHealth)
-	mux.HandleFunc("GET "+releasesPath, handleReleases(cfg.Release))
+	mux.HandleFunc("GET "+releasesPath, handleReleases(releaseProvider(cfg, log)))
 
 	csp := contentSecurityPolicy(nil)
 	if built {
@@ -112,13 +113,27 @@ func handleHealth(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write([]byte("healthy\n"))
 }
 
-func handleReleases(release config.Release) http.HandlerFunc {
-	body, err := json.Marshal(release)
-	if err != nil {
-		// Release is a plain struct of strings; this cannot fail in practice.
-		panic("marshalling the release payload: " + err.Error())
-	}
-	return func(w http.ResponseWriter, _ *http.Request) {
+func releaseProvider(cfg config.Config, log *slog.Logger) *releases.Provider {
+	return releases.New(releases.Options{
+		Repo:     cfg.ReleasesRepo,
+		TTL:      cfg.ReleasesTTL,
+		Token:    cfg.GitHubToken,
+		Fallback: cfg.ReleaseFallback,
+		Logger:   log,
+	})
+}
+
+func handleReleases(provider *releases.Provider) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Current never fails: a slow or broken GitHub yields the last good
+		// answer, or the configured fallback, rather than an error page where
+		// the download buttons should be.
+		body, err := json.Marshal(provider.Current(r.Context()))
+		if err != nil {
+			// A plain struct of strings; unreachable in practice.
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		// Short enough that a new release is picked up promptly, long enough
 		// that the landing page does not hit the origin on every view.

@@ -19,6 +19,7 @@ One container, no database, no Redis, no mail relay: the site keeps no state.
 |------|-----------|
 | `cmd/server/` | the binary's entry point |
 | `internal/config/` | environment configuration, with working defaults |
+| `internal/releases/` | turns the latest GitHub release into the download buttons |
 | `internal/server/` | routing, middleware (gzip, CSP, logging), static serving |
 | `web/` | the React app; `web/embed.go` compiles `web/dist` into the binary |
 | `web/src/i18n/` | `en.ts` is the reference dictionary, `uk.ts` is typed against it |
@@ -63,16 +64,31 @@ beside `docker-compose.yml` on the server — see `.env.example`.
 |----------|---------|--------------|
 | `PORT` | `8080` | listen port (the compose healthcheck and Traefik label both assume 8080) |
 | `REFIGURE_ADDR` | `:8080` | full listen address, if a port alone is not enough |
-| `REFIGURE_VERSION` | `1.0.0` | version shown next to the download buttons |
-| `REFIGURE_{MAC,WINDOWS,LINUX}_URL` | the v1.0.0 links | where each download button points |
-| `REFIGURE_{MAC,WINDOWS,LINUX}_SIZE` | `94 MB`, ``, `108 MB` | size shown under each button; may be empty |
+| `REFIGURE_RELEASES_REPO` | `oduvan/lyabah-refigure` | whose latest GitHub release drives the download buttons |
+| `REFIGURE_RELEASES_TTL` | `15m` | how often GitHub is asked |
+| `GITHUB_TOKEN` | *(unset)* | optional; only lifts GitHub's anonymous rate limit |
+| `REFIGURE_VERSION` | from the release | overrides the version shown |
+| `REFIGURE_{MAC,WINDOWS,LINUX}_URL` | from the release | overrides where a button points |
+| `REFIGURE_{MAC,WINDOWS,LINUX}_SIZE` | from the release | overrides the size under a button |
 | `REFIGURE_CANONICAL_HOST` | *(unset)* | when set, every other hostname is 301'd here |
 | `REFIGURE_STATIC_DIR` | *(unset)* | serve the site from this directory instead of the embedded build |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 
-**Shipping a new desktop release** is an `.env` edit and `./scripts/deploy.sh`
-on the server — the version and links are read at startup, so the site itself
-does not need rebuilding.
+**Shipping a new desktop release is just publishing the GitHub release.** The
+site reads the repository's latest release and picks one asset per platform —
+the `.dmg`, the `.exe`, the `.AppImage` — taking each size from the asset
+itself. Updater files (`latest*.yml`, `.blockmap`) are ignored, the mac `.zip`
+loses to the `.dmg`, and arm64 loses to x64, since the buttons are not
+architecture-aware.
+
+The answer is cached for `REFIGURE_RELEASES_TTL`, and a refresh that fails
+keeps serving the last good release rather than blanking the buttons — so a
+GitHub outage is invisible. Nothing to redeploy, and no `.env` to edit.
+
+A platform published somewhere other than a GitHub asset — a Microsoft Store
+listing, say — is set with the `REFIGURE_*_URL` overrides below, which win over
+the release. The Windows button calls itself "Get it from the Microsoft Store"
+only when its link actually points there.
 
 ## HTTP surface
 
@@ -83,7 +99,7 @@ does not need rebuilding.
 | `/assets/*` | fingerprinted bundles, `immutable` for a year |
 | `/favicon.svg`, `/robots.txt`, `/sitemap.xml`, `/site.webmanifest`, icons | one hour |
 | `/health` | `healthy`, `no-store` — what the container healthcheck polls |
-| `/api/v1/releases` | `{"version":…,"downloads":[…]}`, cached five minutes |
+| `/api/v1/releases` | `{"version":…,"downloads":[…]}` derived from the latest GitHub release, cached five minutes at the edge |
 
 Responses carry a CSP whose `script-src` is `'self'` plus a **hash of the inline
 theme script**, computed from `index.html` at startup — so the no-flash boot

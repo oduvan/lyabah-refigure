@@ -1,11 +1,12 @@
 import { useI18n } from '../../i18n'
-import { downloadFor, type Platform, useRelease } from '../../lib/releases'
+import { downloadFor, isStoreLink, type Platform, useRelease } from '../../lib/releases'
 import { Section } from './primitives'
 
 export function Download() {
   const { t } = useI18n()
   const release = useRelease()
 
+  const windowsURL = downloadFor(release, 'windows').url
   const cards: {
     platform: Platform
     label: string
@@ -15,7 +16,7 @@ export function Download() {
     { platform: 'mac', label: t.download.mac, meta: t.download.macMeta, primary: true },
     {
       platform: 'windows',
-      label: t.download.windows,
+      label: isStoreLink(windowsURL) ? t.download.windows : t.download.windowsDirect,
       meta: t.download.windowsMeta,
       primary: false,
     },

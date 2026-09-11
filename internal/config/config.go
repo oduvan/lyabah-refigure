@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/oduvan/lyabah-refigure/internal/releases"
 )
 
 // Config is the fully resolved server configuration.
@@ -22,8 +24,17 @@ type Config struct {
 	// CanonicalHost, when set, is the host visitors are redirected to. It keeps
 	// one canonical origin when Traefik also routes, say, the www name.
 	CanonicalHost string
-	// Release describes the downloads advertised on the landing page.
-	Release Release
+	// ReleaseFallback is what the download buttons show before GitHub has
+	// answered, and whenever it cannot. Values set in the environment also
+	// override what the release says, which is the escape hatch for a platform
+	// published somewhere other than a GitHub asset (a store listing, say).
+	ReleaseFallback releases.Release
+	// ReleasesRepo is the "owner/name" whose latest release drives the buttons.
+	ReleasesRepo string
+	// ReleasesTTL bounds how often GitHub is asked.
+	ReleasesTTL time.Duration
+	// GitHubToken is optional; it only lifts the unauthenticated rate limit.
+	GitHubToken string
 	// LogLevel is one of debug, info, warn, error.
 	LogLevel string
 	// ReadTimeout and friends bound a request's lifetime.
@@ -33,42 +44,30 @@ type Config struct {
 	ShutdownTimeout   time.Duration
 }
 
-// Download is one platform's artefact.
-type Download struct {
-	Platform string `json:"platform"`
-	URL      string `json:"url"`
-	// Size is shown next to the button, e.g. "94 MB". Empty for store links.
-	Size string `json:"size"`
-}
-
-// Release is the payload of GET /api/v1/releases.
-type Release struct {
-	Version   string     `json:"version"`
-	Downloads []Download `json:"downloads"`
-}
-
 const (
 	defaultAddr    = ":8080"
 	defaultVersion = "1.0.0"
+	defaultRepo    = "oduvan/lyabah-refigure"
+	defaultTTL     = 15 * time.Minute
 )
 
-// Defaults match what the landing page falls back to when the API is
-// unreachable, so the two never disagree by accident.
-var defaultDownloads = []Download{
+// The v1.0.0 assets, so the buttons are correct even before GitHub answers.
+// They are replaced by whatever the latest release actually holds.
+var defaultDownloads = []releases.Download{
 	{
-		Platform: "mac",
-		URL:      "https://github.com/oduvan/refigure/releases/download/v1.0.0/Refigure-1.0.0-universal.dmg",
-		Size:     "94 MB",
+		Platform: releases.Mac,
+		URL:      "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0-universal.dmg",
+		Size:     "179 MB",
 	},
 	{
-		Platform: "windows",
-		URL:      "https://apps.microsoft.com/detail/refigure",
-		Size:     "",
+		Platform: releases.Windows,
+		URL:      "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-Setup-1.0.0.exe",
+		Size:     "84 MB",
 	},
 	{
-		Platform: "linux",
-		URL:      "https://github.com/oduvan/refigure/releases/download/v1.0.0/Refigure-1.0.0-x86_64.AppImage",
-		Size:     "108 MB",
+		Platform: releases.Linux,
+		URL:      "https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0.AppImage",
+		Size:     "111 MB",
 	},
 }
 
@@ -96,17 +95,27 @@ func Load() (Config, error) {
 		cfg.Addr = addr
 	}
 
-	cfg.Release = loadRelease()
+	cfg.ReleaseFallback = loadReleaseFallback()
+	cfg.ReleasesRepo = envOr("REFIGURE_RELEASES_REPO", defaultRepo)
+	cfg.GitHubToken = strings.TrimSpace(os.Getenv("GITHUB_TOKEN"))
+	cfg.ReleasesTTL = defaultTTL
+	if raw := strings.TrimSpace(os.Getenv("REFIGURE_RELEASES_TTL")); raw != "" {
+		ttl, err := time.ParseDuration(raw)
+		if err != nil || ttl <= 0 {
+			return Config{}, fmt.Errorf("REFIGURE_RELEASES_TTL: %q is not a positive duration", raw)
+		}
+		cfg.ReleasesTTL = ttl
+	}
 	return cfg, nil
 }
 
-func loadRelease() Release {
-	rel := Release{
+func loadReleaseFallback() releases.Release {
+	rel := releases.Release{
 		Version:   envOr("REFIGURE_VERSION", defaultVersion),
-		Downloads: make([]Download, 0, len(defaultDownloads)),
+		Downloads: make([]releases.Download, 0, len(defaultDownloads)),
 	}
 	for _, d := range defaultDownloads {
-		key := strings.ToUpper(d.Platform)
+		key := strings.ToUpper(string(d.Platform))
 		url := envOr("REFIGURE_"+key+"_URL", d.URL)
 		if strings.TrimSpace(url) == "" {
 			// A blank URL would render a dead button; an empty size is a
@@ -114,7 +123,7 @@ func loadRelease() Release {
 			// falls back here.
 			url = d.URL
 		}
-		rel.Downloads = append(rel.Downloads, Download{
+		rel.Downloads = append(rel.Downloads, releases.Download{
 			Platform: d.Platform,
 			URL:      url,
 			Size:     envOr("REFIGURE_"+key+"_SIZE", d.Size),

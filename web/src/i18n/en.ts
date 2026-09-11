@@ -187,6 +187,7 @@ export const en = {
     mac: 'Download for macOS',
     macMeta: 'Intel & Apple silicon',
     windows: 'Get it from the Microsoft Store',
+    windowsDirect: 'Download for Windows',
     windowsMeta: 'Windows 10 and later',
     linux: 'Download for Linux',
     linuxMeta: 'AppImage, .deb',
