@@ -112,7 +112,7 @@ func TestReleasesJSON(t *testing.T) {
 // not index an endless supply of "pages".
 func TestSPARoutesAndNotFound(t *testing.T) {
 	h := newTestServer(t, nil)
-	for _, path := range []string{"/", "/privacy", "/uk", "/uk/privacy"} {
+	for _, path := range []string{"/", "/privacy", "/eula", "/uk", "/uk/privacy", "/uk/eula"} {
 		res := get(t, h, path, nil)
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("GET %s: status = %d, want 200", path, res.StatusCode)

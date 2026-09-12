@@ -18,8 +18,10 @@ import (
 var spaRoutes = map[string]bool{
 	"/":           true,
 	"/privacy":    true,
+	"/eula":       true,
 	"/uk":         true,
 	"/uk/privacy": true,
+	"/uk/eula":    true,
 }
 
 const (

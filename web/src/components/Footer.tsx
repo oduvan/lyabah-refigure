@@ -21,6 +21,9 @@ export function Footer() {
         <Link to={path('/privacy')} className="transition-colors hover:text-ink">
           {t.footer.privacy}
         </Link>
+        <Link to={path('/eula')} className="transition-colors hover:text-ink">
+          {t.footer.license}
+        </Link>
         <span className="ml-auto tabular-nums">© {year}</span>
       </div>
     </footer>
