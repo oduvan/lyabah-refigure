@@ -293,7 +293,7 @@ export const en = {
     updatedIso: '2026-09-13',
     version: 'Version 1.0',
     intro:
-      'This agreement is between you and Liabakh (“we”, “us”), the publisher of Refigure. It covers the Refigure desktop application and every update to it. By installing or using Refigure you accept this agreement. If you do not accept it, do not install or use Refigure.',
+      'This agreement is between you and Oleksandr Liabakh (“we”, “us”), the publisher of Refigure. It covers the Refigure desktop application and every update to it. By installing or using Refigure you accept this agreement. If you do not accept it, do not install or use Refigure.',
     sections: [
       {
         heading: 'What you may do',
