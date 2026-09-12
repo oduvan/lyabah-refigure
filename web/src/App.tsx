@@ -17,6 +17,7 @@ import {
   useI18n,
 } from './i18n'
 import { ThemeProvider } from './lib/theme'
+import Eula from './pages/Eula'
 import Landing from './pages/Landing'
 import NotFound from './pages/NotFound'
 import Privacy from './pages/Privacy'
@@ -73,8 +74,10 @@ function Shell() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/eula" element={<Eula />} />
           <Route path="/uk" element={<Landing />} />
           <Route path="/uk/privacy" element={<Privacy />} />
+          <Route path="/uk/eula" element={<Eula />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

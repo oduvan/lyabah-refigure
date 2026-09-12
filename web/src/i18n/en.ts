@@ -18,6 +18,11 @@ export const en = {
       description:
         'Refigure has no account, no analytics and no server. Your projects stay on your computer.',
     },
+    eula: {
+      title: 'License Agreement — Refigure',
+      description:
+        'The terms you accept when you use Refigure. Free to use, for personal and commercial work alike; your projects and exported images stay yours.',
+    },
     notFound: {
       title: 'Page not found — Refigure',
       description: 'That page does not exist.',
@@ -196,6 +201,7 @@ export const en = {
   footer: {
     github: 'GitHub',
     privacy: 'Privacy',
+    license: 'License',
   },
 
   privacy: {
@@ -279,6 +285,136 @@ export const en = {
   notFound: {
     title: 'Page not found',
     body: 'That page does not exist — it may have moved, or the link may be wrong.',
+    backHome: '← Back to the home page',
+  },
+  eula: {
+    title: 'Refigure — License Agreement',
+    updated: 'Last updated',
+    updatedIso: '2026-09-13',
+    version: 'Version 1.0',
+    intro:
+      'This agreement is between you and Oleksandr Liabakh (“we”, “us”), the publisher of Refigure. It covers the Refigure desktop application and every update to it. By installing or using Refigure you accept this agreement. If you do not accept it, do not install or use Refigure.',
+    sections: [
+      {
+        heading: 'What you may do',
+        paragraphs: ['We give you a free, worldwide, non-exclusive license to use Refigure:'],
+        list: [
+          'For your own work and for paid work alike, including inside a company.',
+          'On as many computers as you use yourself.',
+          'To produce images, and to use those images for anything, including commercially.',
+        ],
+        after: [
+          'There is no license key, no seat count and no expiry date. This license lasts until it ends under **Ending this agreement** below.',
+        ],
+      },
+      {
+        heading: 'What you may not do',
+        paragraphs: ['You may not:'],
+        list: [
+          'Sell, rent, sublicense or redistribute Refigure itself, or charge anyone for access to it. Using it to do paid work is fine; selling the application is not.',
+          'Remove or alter any copyright, trade mark or license notice in it.',
+          'Reverse engineer, decompile or disassemble Refigure — except where the law gives you that right in spite of this agreement. In many countries it does, and this clause does not take it away.',
+          'Use Refigure where that would break the law that applies to you, or send it anywhere an export restriction forbids.',
+        ],
+        after: [],
+      },
+      {
+        heading: 'Your work stays yours',
+        paragraphs: [
+          'Refigure reads and writes files on your own computer: your screenshot images, a plain-text `refigure.yaml` project file, and the images you export.',
+          '**We claim no ownership of any of it, and no license over it.** Your projects and your exported images are yours. We never receive them — Refigure has no account, no server and no telemetry. The [Privacy Policy](/privacy) sets that out in full.',
+        ],
+        list: [],
+        after: [],
+      },
+      {
+        heading: 'Software inside Refigure that is not ours',
+        paragraphs: [
+          'Refigure is built on open-source components, including Electron and Chromium. Each one keeps its own license, and nothing in this agreement reduces the rights those licenses give you.',
+          'Images are produced by a separate program, **refigure-cli**, which is open source under the MIT license: [github.com/oduvan/refigure-cli](https://github.com/oduvan/refigure-cli). That license covers it, not this one — including the copy Refigure downloads for you.',
+        ],
+        list: [],
+        after: [],
+      },
+      {
+        heading: 'Updates',
+        paragraphs: [
+          'Refigure can check for updates and install them. An update is part of Refigure, and this agreement covers it too. We may add, change or remove features in an update.',
+          'On Windows, updates are delivered by the Microsoft Store under its own terms.',
+        ],
+        list: [],
+        after: [],
+      },
+      {
+        heading: 'What Refigure costs',
+        paragraphs: [
+          'This version is free and has no limits: no trial, no locked features, nothing counted or metered.',
+          'A later version may be paid. That would be a separate release with its own terms. It does not change this agreement, and the copy you already have keeps working.',
+        ],
+        list: [],
+        after: [],
+      },
+      {
+        heading: 'Ending this agreement',
+        paragraphs: [
+          'This agreement ends automatically if you break its terms. You may end it at any time by deleting Refigure from your computers.',
+          'Ending it does not touch the files you made with Refigure — they stay yours. **Your work stays yours**, **No warranty** and **Our liability** carry on after this agreement ends.',
+        ],
+        list: [],
+        after: [],
+      },
+      {
+        heading: 'No warranty',
+        paragraphs: [
+          'Refigure is provided **as is**, without warranty of any kind — express or implied — including any implied warranty of merchantability, fitness for a particular purpose, or non-infringement. We do not promise that it is free of faults, or that it will always be available.',
+          'Refigure writes files in the folders you choose. Keep your own backups of anything you cannot afford to lose.',
+        ],
+        list: [],
+        after: [],
+      },
+      {
+        heading: 'Our liability',
+        paragraphs: [
+          'To the fullest extent the law allows, we are not liable for any indirect, incidental, special or consequential loss, nor for lost profits, lost data or lost work, arising out of Refigure or this agreement.',
+          'Nothing here limits liability that the law does not allow us to limit, including liability for death or personal injury caused by negligence, or for fraud. If you are a consumer, you keep every right your local consumer law gives you, and this agreement takes none of them away.',
+        ],
+        list: [],
+        after: [],
+      },
+      {
+        heading: 'If you installed Refigure from a store',
+        paragraphs: [
+          'When you install Refigure from the Microsoft Store or the Mac App Store, that store’s own terms apply to your copy as well. Where a store term and a term here cannot both be true, the store term wins for that copy.',
+          'The store is not a party to this agreement and is not responsible for Refigure.',
+        ],
+        list: [],
+        after: [],
+      },
+      {
+        heading: 'Changes to this agreement',
+        paragraphs: [
+          'We may update this agreement. The current version is always published on this page, with its version number and date. If a change matters, Refigure asks you to accept the new version the next time you open it. Continuing to use Refigure after a change means you accept it.',
+        ],
+        list: [],
+        after: [],
+      },
+      {
+        heading: 'Governing law',
+        paragraphs: [
+          'This agreement is governed by the law of Ukraine. If you are a consumer, that does not take away the protection of the law of the country you live in.',
+        ],
+        list: [],
+        after: [],
+      },
+      {
+        heading: 'Contact',
+        paragraphs: [
+          'Questions about this agreement: [a.lyabah@checkio.org](mailto:a.lyabah@checkio.org)',
+        ],
+        list: [],
+        after: [],
+      },
+    ],
     backHome: '← Back to the home page',
   },
 }
