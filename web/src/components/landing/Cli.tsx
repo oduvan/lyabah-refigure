@@ -34,7 +34,7 @@ export function Cli() {
           <CopyableCommand
             comment={t.cli.comments.curl}
             lines={[
-              'curl -sSL https://github.com/oduvan/refigure-cli/releases/download/v1.2.3/refigure_v1.2.3_darwin_arm64.tar.gz | tar -xz',
+              'curl -sSL https://github.com/oduvan/refigure-cli/releases/download/v0.2.2/refigure_v0.2.2_darwin_arm64.tar.gz | tar -xz',
             ]}
           />
           <CopyableCommand

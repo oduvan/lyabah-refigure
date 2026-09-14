@@ -7,7 +7,9 @@ import { Hero } from '../components/landing/Hero'
 import { Loop } from '../components/landing/Loop'
 import { ManyImages } from '../components/landing/ManyImages'
 import { Restyle } from '../components/landing/Restyle'
+import { Redact } from '../components/landing/Redact'
 import { Rot } from '../components/landing/Rot'
+import { TheApp } from '../components/landing/TheApp'
 import { useI18n } from '../i18n'
 import { useDocumentHead } from '../lib/head'
 
@@ -24,11 +26,13 @@ export default function Landing() {
   return (
     <>
       <Hero />
+      <TheApp />
       <Rot />
       <DataNotPixels />
       <Loop />
       <Compare />
       <ManyImages />
+      <Redact />
       <Restyle />
       <FilesYouOwn />
       <Cli />

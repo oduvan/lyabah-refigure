@@ -13,7 +13,7 @@ export function FilesYouOwn() {
         </div>
 
         <CodePanel className="min-w-0 rounded-lg px-5 py-5 shadow-card">
-          <div className="text-code-dim">$ git diff docs/screenshots/settings.yaml</div>
+          <div className="text-code-dim">$ git diff docs/screenshots/refigure.yaml</div>
           <div className="mt-1.5 text-code-dim">@@ -2,7 +2,7 @@ screen: settings</div>
           <div className="text-code-del">- image: settings@2x.png</div>
           <div className="text-code-add">+ image: settings-v2@2x.png</div>
