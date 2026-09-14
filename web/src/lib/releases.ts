@@ -18,22 +18,27 @@ export type Release = {
  * Rendered immediately so the hero button never flashes empty; the Go server
  * serves the authoritative copy from /api/v1/releases and it replaces this.
  */
+// Asset names carry their version, so this cannot be written as a link to
+// "latest" — it has to name a release, and therefore has to be moved when one
+// ships. It is what a visitor is offered whenever the API cannot be reached, so
+// leaving it behind quietly hands out an old build: it sat at 1.0.0 while 1.2.1
+// was current, which is four releases and two features.
 export const FALLBACK_RELEASE: Release = {
-  version: '1.0.0',
+  version: '1.2.1',
   downloads: [
     {
       platform: 'mac',
-      url: 'https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0-universal.dmg',
-      size: '179 MB',
+      url: 'https://github.com/oduvan/lyabah-refigure/releases/download/v1.2.1/Refigure-1.2.1-universal.dmg',
+      size: '180 MB',
     },
     {
       platform: 'windows',
-      url: 'https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-Setup-1.0.0.exe',
+      url: 'https://github.com/oduvan/lyabah-refigure/releases/download/v1.2.1/Refigure-Setup-1.2.1.exe',
       size: '84 MB',
     },
     {
       platform: 'linux',
-      url: 'https://github.com/oduvan/lyabah-refigure/releases/download/v1.0.0/Refigure-1.0.0.AppImage',
+      url: 'https://github.com/oduvan/lyabah-refigure/releases/download/v1.2.1/Refigure-1.2.1.AppImage',
       size: '111 MB',
     },
   ],

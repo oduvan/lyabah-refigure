@@ -51,7 +51,7 @@ export const en = {
   // The fake Refigure window in the hero.
   editor: {
     app: 'Refigure',
-    path: 'docs-screenshots / settings.yaml',
+    path: 'docs-screenshots / refigure.yaml',
     tools: {
       cut: 'Cut',
       arrow: 'Arrow',
@@ -85,6 +85,19 @@ export const en = {
     annotationClick: 'Click Connect',
   },
 
+  app: {
+    title: 'The whole application, on one screen.',
+    body: 'Screenshots down the left, the picture in the middle, and on the right the cut you are editing with a live preview of the file it will export. Draw a cut, add an arrow, and what you are looking at is already what you will ship.',
+    alt: 'The Refigure editor: a screenshot of a settings page with a named cut drawn over the form, a red rectangle and an arrow labelled “Paste the token here”, and a panel on the right previewing the image that cut exports.',
+  },
+
+  redact: {
+    title: 'Hide a token once, not every time.',
+    body: 'Blur or pixelate a region and the secret is gone from every image that region exports into. It is a figure like any other, so when you drop in a new screenshot the redaction is still there, over the same place — there is nothing to remember and nothing to redo.',
+    caption: 'What the editor shows and what the file contains are the same pixels.',
+    alt: 'The same settings page in Refigure with the access token blurred out, an arrow pointing at it labelled “Hidden — and it stays hidden”.',
+  },
+
   rot: {
     title: 'Screenshots rot.',
     body: 'Every product ships a redesign, a rebrand, or moves a button. Then every annotated image has to be captured, cropped, drawn and exported again — so in practice it doesn’t happen, and the documentation quietly goes stale.',
@@ -96,7 +109,7 @@ export const en = {
 
   data: {
     title: 'Your work is data, not pixels.',
-    body: 'A project is a folder. Screenshots go in; on top you define **cuts** — named rectangles, each exporting as one image — and **figures**: arrows, rectangles, lines and text. All of it is saved as readable YAML beside the images.',
+    body: 'A project is a folder. Screenshots go in; on top you define **cuts** — named rectangles, each exporting as one image — and **figures**: arrows, rectangles, lines, text, and blurred or pixelated regions for whatever must not be published. All of it is saved as readable YAML beside the images.',
   },
 
   loop: {
@@ -231,17 +244,17 @@ export const en = {
         list: [
           'Those files are read and written only on your own computer.',
           'They are never uploaded anywhere.',
-          'Refigure opens only the folders you select yourself, through the standard Windows file picker.',
+          'Refigure opens only the folders you select yourself, through your system’s own file picker.',
         ],
         after: ['Exported images are written to the destination folder you choose.'],
       },
       {
         heading: 'When Refigure uses the network',
         paragraphs: [
-          'Refigure works offline. It contacts the internet in one situation only.',
+          'Refigure works offline. It contacts the internet in two situations, both of them about software rather than about you.',
           '**Downloading the exporter.** Images are produced by a separate open-source program, refigure-cli. The first time you export, Refigure downloads that program from GitHub (`github.com` and `api.github.com`), checks it against the checksum published with the release, and keeps a copy on your computer. This happens once — not on every export, and never when the application starts. Afterwards Refigure checks at most once a day whether a newer version exists.',
           'As with visiting any website, GitHub can see the IP address of the computer making that request. Refigure sends GitHub nothing about you, your projects, or what you export. GitHub’s privacy statement covers that request: [docs.github.com/site-policy/privacy-policies](https://docs.github.com/site-policy/privacy-policies)',
-          'On Windows, Refigure does not check for application updates — updates are delivered by the Microsoft Store.',
+          '**Checking for a new version of Refigure.** The application asks GitHub whether a newer release has been published, and can install it for you. That request says nothing about you, your projects or what you export. The copy installed from the Microsoft Store does not check at all: the Store updates it.',
         ],
         list: [],
         after: [],
@@ -340,7 +353,7 @@ export const en = {
         heading: 'Updates',
         paragraphs: [
           'Refigure can check for updates and install them. An update is part of Refigure, and this agreement covers it too. We may add, change or remove features in an update.',
-          'On Windows, updates are delivered by the Microsoft Store under its own terms.',
+          'For the copy installed from the Microsoft Store, updates are delivered by the Store under its own terms.',
         ],
         list: [],
         after: [],
