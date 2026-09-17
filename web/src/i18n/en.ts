@@ -192,11 +192,33 @@ export const en = {
       'The exporter only ever reads your project. It writes images, never the project file — so an assistant can propose annotations and check them, and you keep the last word.',
     validate: {
       warning: 'warning',
-      line: 'line 11: unknown key',
-      didYouMean: '— did you mean',
-      ok: 'ok',
-      summary: '3 files checked · 1 warning · 0 errors',
+      warningLine: 'line 4: unknown key `colour` in `style` — it is ignored',
+      warningHint: 'did you mean `color`?',
+      error: 'error',
+      errorLine:
+        'line 24: figure "fig_box" belongs to cut "cut_missing", which does not exist',
+      errorHint:
+        'an owned figure appears only in its own cut, so this one appears nowhere',
     },
+  },
+
+  mcp: {
+    title: 'Or give the assistant the tools directly',
+    body: '`refigure mcp` serves the [Model Context Protocol](https://modelcontextprotocol.io) over stdin and stdout — the same jobs the command line does, offered as tools. A client starts it as a subprocess:',
+    tools: [
+      { name: 'schema', what: 'The format: prose, a complete example, or a JSON Schema.' },
+      { name: 'validate', what: 'Every problem at once, with the line each is on.' },
+      { name: 'list', what: 'What an export would write, and at what size.' },
+      {
+        name: 'export',
+        what: 'Write one image per cut. The only tool here that writes anything.',
+      },
+      { name: 'preview', what: 'Draw one cut and hand it back as an image.' },
+    ],
+    previewNote:
+      '`preview` is the one with no command behind it, and it is the reason to run the server rather than the binary: something that has just written twenty lines of YAML has no other way to see what they draw. It writes nothing to disk.',
+    projectNote:
+      'The project folder named on the command line is what every tool uses unless a call names another, so a client set up for one project need not repeat it.',
   },
 
   download: {
