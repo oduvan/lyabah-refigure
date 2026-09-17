@@ -177,34 +177,27 @@ export const en = {
     shortest: 'Then the shortest thing that shows the point:',
     sameBinary:
       'Same binary, same pixels, whether it runs on your laptop or in CI.',
+    jsonNote:
+      'Every command also takes `--json`, so a build step — or an assistant — never has to read prose to find out what happened.',
     repository: 'Repository →',
   },
 
-  assistants: {
-    title: 'Works with Claude and other assistants',
-    body: 'A project is plain YAML that an assistant can read and write. The exporter describes its own format and checks what was written, so the work can be handed over without anyone guessing:',
-    schemaComments: {
-      schema: '# the format, explained by the tool itself',
-      example: '# a complete file that validates',
-      validate: '# every mistake at once, with line numbers',
-    },
-    readsOnly:
-      'The exporter only ever reads your project. It writes images, never the project file — so an assistant can propose annotations and check them, and you keep the last word.',
-    validate: {
-      warning: 'warning',
-      warningLine: 'line 4: unknown key `colour` in `style` — it is ignored',
-      warningHint: 'did you mean `color`?',
-      error: 'error',
-      errorLine:
-        'line 24: figure "fig_box" belongs to cut "cut_missing", which does not exist',
-      errorHint:
-        'an owned figure appears only in its own cut, so this one appears nowhere',
-    },
+  claude: {
+    title: 'Install it into Claude in one command',
+    body: '`refigure mcp` serves the [Model Context Protocol](https://modelcontextprotocol.io) over stdin and stdout — the same jobs the command line does, offered as tools. Claude Code registers it from inside your docs project:',
+    addComment: '# run it from your docs project',
+    dashNote:
+      'The `--` is required: everything after it is the command Claude starts, and without it Claude Code would read `mcp` as one of its own arguments. `claude mcp list` shows the server and whether it answered. To have it in every project, add `--scope user` and an absolute path.',
+    desktopTitle: 'Claude Desktop',
+    desktopBody:
+      'No command there. Open Settings → Developer → Edit Config, add the server to `claude_desktop_config.json`, and restart the app:',
+    pathNote:
+      'Claude Desktop starts the server without your shell, so unless the binary is on the system `PATH`, `command` needs the full path that `which refigure` prints.',
   },
 
   mcp: {
-    title: 'Or give the assistant the tools directly',
-    body: '`refigure mcp` serves the [Model Context Protocol](https://modelcontextprotocol.io) over stdin and stdout — the same jobs the command line does, offered as tools. A client starts it as a subprocess:',
+    title: 'What it can do once it is there',
+    body: 'Four of these are jobs the command line already does. The fifth exists only here:',
     tools: [
       { name: 'schema', what: 'The format: prose, a complete example, or a JSON Schema.' },
       { name: 'validate', what: 'Every problem at once, with the line each is on.' },
@@ -216,9 +209,21 @@ export const en = {
       { name: 'preview', what: 'Draw one cut and hand it back as an image.' },
     ],
     previewNote:
-      '`preview` is the one with no command behind it, and it is the reason to run the server rather than the binary: something that has just written twenty lines of YAML has no other way to see what they draw. It writes nothing to disk.',
+      '`preview` is the one with no command behind it, and it is the reason to run the server rather than the binary: something that has just written twenty lines of YAML has no other way to see what they draw. The image goes straight back to the assistant and never to disk.',
+    readsOnly:
+      'Nothing here rewrites your project. `export` writes images; the project file stays yours — so Claude can propose annotations and check them, and you keep the last word.',
     projectNote:
       'The project folder named on the command line is what every tool uses unless a call names another, so a client set up for one project need not repeat it.',
+    validate: {
+      warning: 'warning',
+      warningLine: 'line 4: unknown key `colour` in `style` — it is ignored',
+      warningHint: 'did you mean `color`?',
+      error: 'error',
+      errorLine:
+        'line 24: figure "fig_box" belongs to cut "cut_missing", which does not exist',
+      errorHint:
+        'an owned figure appears only in its own cut, so this one appears nowhere',
+    },
   },
 
   download: {
