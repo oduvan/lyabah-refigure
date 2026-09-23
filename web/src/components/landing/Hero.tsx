@@ -1,5 +1,6 @@
 import { useI18n } from '../../i18n'
 import { downloadFor, isStoreLink, usePlatform, useRelease } from '../../lib/releases'
+import { STORE_URL } from '../../lib/links'
 import { AnnotatedScreenshot } from './MockApp'
 import { Section } from './primitives'
 
@@ -15,6 +16,10 @@ export function Hero() {
     linux: t.download.linux,
   }[platform]
   const meta = [release.version, download.size].filter(Boolean).join(' · ')
+  // A Windows visitor is the only one with a real choice to make here, and the
+  // hero button can only be one thing. Offer the other route inline rather than
+  // making them find it further down the page.
+  const showStore = platform === 'windows' && !isStoreLink(download.url)
 
   return (
     <Section first className="pt-14 pb-16 sm:pt-24 sm:pb-20">
@@ -34,6 +39,14 @@ export function Hero() {
             <span>{label}</span>
             <span className="text-[13px] font-normal opacity-75">{meta}</span>
           </a>
+          {showStore && (
+            <a
+              href={STORE_URL}
+              className="text-[13px] text-subtle underline underline-offset-2 transition-colors hover:text-ink"
+            >
+              {t.hero.orStore}
+            </a>
+          )}
           <div className="text-[13px] text-subtle">
             {t.hero.freeNote} · {t.hero.platforms} ·{' '}
             <a

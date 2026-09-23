@@ -46,6 +46,7 @@ export const en = {
     freeNote: 'Free. No limits.',
     platforms: 'macOS, Windows, Linux',
     otherPlatforms: 'Other platforms',
+    orStore: 'or get it from the Microsoft Store',
   },
 
   // The fake Refigure window in the hero.
@@ -233,7 +234,8 @@ export const en = {
     macMeta: 'Intel & Apple silicon',
     windows: 'Get it from the Microsoft Store',
     windowsDirect: 'Download for Windows',
-    windowsMeta: 'Windows 10 and later',
+    windowsMeta: 'Installer · Windows 10 and later',
+    storeMeta: 'Updates automatically',
     linux: 'Download for Linux',
     linuxMeta: 'AppImage, .deb',
   },
