@@ -1,5 +1,6 @@
 import { useI18n } from '../../i18n'
 import { downloadFor, isStoreLink, type Platform, useRelease } from '../../lib/releases'
+import { STORE_URL } from '../../lib/links'
 import { Section } from './primitives'
 
 export function Download() {
@@ -7,26 +8,53 @@ export function Download() {
   const release = useRelease()
 
   const windowsURL = downloadFor(release, 'windows').url
+  // Windows gets both: the installer from the release, and the Store listing.
+  // They are genuinely different products to a visitor — the Store copy updates
+  // itself and is vetted by Microsoft, the installer needs no Store account and
+  // is the only option on a machine without one. Unless the release itself has
+  // been pointed at the Store, in which case one card already says so and a
+  // second would be the same link twice.
+  const windowsIsStore = isStoreLink(windowsURL)
+
   const cards: {
-    platform: Platform
+    key: string
+    href: string
     label: string
-    meta: string
+    detail: string
     primary: boolean
-  }[] = [
-    { platform: 'mac', label: t.download.mac, meta: t.download.macMeta, primary: true },
-    {
-      platform: 'windows',
-      label: isStoreLink(windowsURL) ? t.download.windows : t.download.windowsDirect,
-      meta: t.download.windowsMeta,
+  }[] = []
+
+  const card = (platform: Platform, label: string, meta: string, primary = false) => {
+    const dl = downloadFor(release, platform)
+    return {
+      key: platform,
+      href: dl.url,
+      label,
+      detail: [release.version, dl.size, meta].filter(Boolean).join(' \u00b7 '),
+      primary,
+    }
+  }
+
+  cards.push(card('mac', t.download.mac, t.download.macMeta, true))
+  cards.push(
+    card(
+      'windows',
+      windowsIsStore ? t.download.windows : t.download.windowsDirect,
+      t.download.windowsMeta,
+    ),
+  )
+  if (!windowsIsStore) {
+    // No version and no size: the Store page is not a release asset, it always
+    // serves whatever Microsoft has certified.
+    cards.push({
+      key: 'store',
+      href: STORE_URL,
+      label: t.download.windows,
+      detail: t.download.storeMeta,
       primary: false,
-    },
-    {
-      platform: 'linux',
-      label: t.download.linux,
-      meta: t.download.linuxMeta,
-      primary: false,
-    },
-  ]
+    })
+  }
+  cards.push(card('linux', t.download.linux, t.download.linuxMeta))
 
   return (
     <Section id="download" raised className="py-16 sm:py-24">
@@ -37,13 +65,11 @@ export function Download() {
         <p className="max-w-[560px] text-base text-muted text-pretty">{t.download.body}</p>
 
         <div className="mt-7 flex flex-wrap justify-center gap-3.5">
-          {cards.map(({ platform, label, meta, primary }) => {
-            const dl = downloadFor(release, platform)
-            const detail = [release.version, dl.size, meta].filter(Boolean).join(' · ')
+          {cards.map(({ key, href, label, detail, primary }) => {
             return (
               <a
-                key={platform}
-                href={dl.url}
+                key={key}
+                href={href}
                 className={
                   'flex min-w-[230px] flex-col items-center gap-1 rounded-lg px-6 py-3.5 text-[15px] font-semibold shadow-card transition-colors ' +
                   (primary
