@@ -189,6 +189,12 @@ export const en = {
     addComment: '# run it from your docs project',
     dashNote:
       'The `--` is required: everything after it is the command Claude starts, and without it Claude Code would read `mcp` as one of its own arguments. `claude mcp list` shows the server and whether it answered. To have it in every project, add `--scope user` and an absolute path.',
+    npxComment: '# nothing installed first',
+    npxTitle: 'Or without installing anything',
+    npxBody:
+      'If you have Node, npm can fetch the binary for the machine it is running on and start the server in one step — nothing to install first, nothing on your `PATH`.',
+    npxNote:
+      'The `@0.2` is the part that matters. It pins the exporter to one series, so the images stay the same until you choose to move; `@latest` would let how a figure is drawn change between two sessions on the same project. The server starts once per session, so fetching it costs well under a second and only then.',
     desktopTitle: 'Claude Desktop',
     desktopBody:
       'No command there. Open Settings → Developer → Edit Config, add the server to `claude_desktop_config.json`, and restart the app:',
