@@ -80,6 +80,21 @@ export function Cli() {
           <p className="max-w-[820px] text-[13px] leading-[1.6] text-subtle text-pretty">
             <Rich text={t.claude.dashNote} />
           </p>
+
+          {/* The alternative, not the replacement: npx needs Node, and Claude
+              Desktop cannot see it any more reliably than it sees refigure. */}
+          <h4 className="mt-4 text-[15px] font-semibold text-ink">{t.claude.npxTitle}</h4>
+          <p className="max-w-[600px] text-[15px] leading-[1.65] text-body text-pretty">
+            <Rich text={t.claude.npxBody} />
+          </p>
+          <CopyableCommand
+            className="min-w-0 max-w-[820px] rounded-lg"
+            comment={t.claude.npxComment}
+            lines={['claude mcp add refigure -- npx -y refigure-cli@0.2 mcp ./docs/screenshots']}
+          />
+          <p className="max-w-[820px] text-[13px] leading-[1.6] text-subtle text-pretty">
+            <Rich text={t.claude.npxNote} />
+          </p>
         </div>
 
         <div className="grid items-start gap-10 md:grid-cols-2 md:gap-12">
