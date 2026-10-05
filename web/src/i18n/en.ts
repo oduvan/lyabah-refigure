@@ -194,7 +194,7 @@ export const en = {
     npxBody:
       'If you have Node, npm can fetch the binary for the machine it is running on and start the server in one step — nothing to install first, nothing on your `PATH`.',
     npxNote:
-      'The `@0.2` is the part that matters. It pins the exporter to one series, so the images stay the same until you choose to move; `@latest` would let how a figure is drawn change between two sessions on the same project. The server starts once per session, so fetching it costs well under a second and only then.',
+      'No project folder is named here, so each call names its own — which makes this the one to register once with `--scope user` and use from anywhere; append the folder to pin it to a single project. The `@0.2` holds the exporter to one series, so the images stay the same until you choose to move, where `@latest` would let how a figure is drawn change between two sessions. The server starts once per session, so fetching it costs well under a second, and only then.',
     desktopTitle: 'Claude Desktop',
     desktopBody:
       'No command there. Open Settings → Developer → Edit Config, add the server to `claude_desktop_config.json`, and restart the app:',

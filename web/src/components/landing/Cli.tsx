@@ -90,7 +90,7 @@ export function Cli() {
           <CopyableCommand
             className="min-w-0 max-w-[820px] rounded-lg"
             comment={t.claude.npxComment}
-            lines={['claude mcp add refigure -- npx -y refigure-cli@0.2 mcp ./docs/screenshots']}
+            lines={['claude mcp add refigure -- npx -y refigure-cli@0.2 mcp']}
           />
           <p className="max-w-[820px] text-[13px] leading-[1.6] text-subtle text-pretty">
             <Rich text={t.claude.npxNote} />
