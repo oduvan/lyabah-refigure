@@ -78,3 +78,23 @@ func TestReleaseOverrides(t *testing.T) {
 		t.Error("mac url is empty")
 	}
 }
+
+func TestAPIKeyAndServiceName(t *testing.T) {
+	t.Setenv("LYABAH_KEY", "  test-key-0123456789  ")
+	t.Setenv("SERVICE_NAME", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.APIKey != "test-key-0123456789" {
+		t.Errorf("APIKey = %q, want the trimmed value", cfg.APIKey)
+	}
+	if cfg.ServiceName != defaultService {
+		t.Errorf("ServiceName = %q, want %q", cfg.ServiceName, defaultService)
+	}
+
+	t.Setenv("SERVICE_NAME", "refigure-staging")
+	if cfg, _ = Load(); cfg.ServiceName != "refigure-staging" {
+		t.Errorf("ServiceName = %q, want refigure-staging", cfg.ServiceName)
+	}
+}

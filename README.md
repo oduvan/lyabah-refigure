@@ -25,7 +25,7 @@ One container, no database, no Redis, no mail relay: the site keeps no state.
 | `web/src/i18n/` | `en.ts` is the reference dictionary, `uk.ts` is typed against it |
 | `Dockerfile` | three stages: build the site, build the binary, ship ~20 MB |
 | `docker-compose.yml` | one service on the shared network, Traefik labels, no host ports |
-| `scripts/` | server-side provision + deploy (unchanged from the template, bar one note below) |
+| `scripts/` | server-side provision + deploy (see the notes under Deploying) |
 
 ## Running it locally
 
@@ -67,6 +67,8 @@ beside `docker-compose.yml` on the server — see `.env.example`.
 | `REFIGURE_RELEASES_REPO` | `oduvan/lyabah-refigure` | whose latest GitHub release drives the download buttons |
 | `REFIGURE_RELEASES_TTL` | `15m` | how often GitHub is asked |
 | `GITHUB_TOKEN` | *(unset)* | optional; only lifts GitHub's anonymous rate limit |
+| `LYABAH_KEY` | *(unset)* | the bearer key of the protected API — see [API authentication](#api-authentication); unset means those endpoints answer `503` |
+| `SERVICE_NAME` | `refigure` | the name `GET /api/ping` reports |
 | `REFIGURE_VERSION` | from the release | overrides the version shown |
 | `REFIGURE_{MAC,WINDOWS,LINUX}_URL` | from the release | overrides where a button points |
 | `REFIGURE_{MAC,WINDOWS,LINUX}_SIZE` | from the release | overrides the size under a button |
@@ -110,11 +112,55 @@ the link, so it is never claimed for a direct download.
 | `/favicon.svg`, `/robots.txt`, `/sitemap.xml`, `/site.webmanifest`, icons | one hour |
 | `/health` | `healthy`, `no-store` — what the container healthcheck polls |
 | `/api/v1/releases` | `{"version":…,"downloads":[…]}` derived from the latest GitHub release, cached five minutes at the edge |
+| `/api/ping` | `{"ok":true,"service":"refigure"}` — **needs the key**, see below |
+
+Everything in this table is public except `/api/ping`.
 
 Responses carry a CSP whose `script-src` is `'self'` plus a **hash of the inline
 theme script**, computed from `index.html` at startup — so the no-flash boot
 script needs no `'unsafe-inline'` and nothing has to be kept in sync by hand.
 Text responses are gzipped in-process; fonts and images are left alone.
+
+## API authentication
+
+Every lyabah service checks the same key on its API: `LYABAH_KEY`. lyabah-service
+(service.lyabah.com) holds it too, and sends it on every call it makes to a
+service, from its project registry:
+
+```yaml
+# internal/registry/registry.yaml in oduvan/lyabah-service
+projects:
+  oduvan/lyabah-refigure:
+    api:
+      base_url: https://refigure.lyabah.com
+      headers:
+        Authorization: Bearer ${LYABAH_KEY}
+```
+
+The deploy brings the key into the app container as the `LYABAH_KEY`
+environment variable. The app's side of the contract:
+
+- **Every endpoint that changes data, or shows what is not public, needs
+  `Authorization: Bearer <LYABAH_KEY>`.** Public pages and reads stay open.
+  This site has no such endpoint today: the pages, `/health` and
+  `/api/v1/releases` are all public. A new endpoint of that kind is wrapped in
+  `requireKey` (`internal/server/auth.go`), as `/api/ping` is.
+- A missing or wrong key answers `401` with `WWW-Authenticate: Bearer` and a
+  JSON body `{"error": "…"}`. The key is compared in constant time.
+- When `LYABAH_KEY` is empty or shorter than 12 characters, the protected
+  endpoints answer `503` (`{"error": "LYABAH_KEY is not set"}`) and the app
+  logs a warning at start: a missing secret never leaves the API open.
+- **`GET /api/ping`**, behind the same check, answers
+  `{"ok": true, "service": "refigure"}`. lyabah-service calls it to confirm the
+  key works.
+
+```bash
+curl -H "Authorization: Bearer $LYABAH_KEY" https://refigure.lyabah.com/api/ping
+```
+
+`GITHUB_TOKEN` is a different thing: it is a token this site sends *to*
+GitHub when it reads the latest release, not a key that callers send to this
+site.
 
 ## How the two languages work
 
@@ -159,17 +205,25 @@ is actually down rather than merely un-deployed.
 **Server setup:** none. CI creates the service directory itself, and
 `docker-compose.yml` defaults every value, so there is no `.env` to place by
 hand — see `.env.example` for the overrides one can carry if you ever want it.
+The only line the deploy writes there itself is `LYABAH_KEY`.
 
 The only prerequisite outside this repo is DNS: `refigure.lyabah.com` must
 resolve to `172.238.109.66` before the first deploy, so ACME can issue the
 certificate.
 
-**GitHub setup** — one secret, under Settings → Secrets and variables → Actions
+**GitHub setup** — two secrets, under Settings → Secrets and variables → Actions
 → **Secrets**:
 
 | Name | Value |
 |------|-------|
 | `SSH_PRIVATE_KEY` | the shared CI private key |
+| `LYABAH_KEY` | the bearer key of the API, the one key every lyabah service shares (see [API authentication](#api-authentication)). Do not type it in: run lyabah-service's **Share LYABAH_KEY** workflow, which copies it into every repository. |
+
+CI passes `LYABAH_KEY` to `scripts/deploy.sh --secrets-from-stdin` on stdin.
+The script writes it into the `LYABAH_KEY=` line of `.env` on the server and
+leaves every other line alone. When the secret is not given (a deploy by hand,
+say), it keeps the value already in `.env`; when there is none at all, it prints
+a note and goes on, and `/api/ping` answers `503` until the secret exists.
 
 The connection details are not secret — they are this server's, and they are in
 the table above — so the workflow defaults them:
