@@ -21,6 +21,7 @@ import (
 const (
 	healthPath   = "/health"
 	releasesPath = "/api/v1/releases"
+	pingPath     = "/api/ping"
 )
 
 // Server owns the HTTP handler and its lifecycle.
@@ -36,6 +37,12 @@ func New(cfg config.Config, log *slog.Logger, assets fs.FS, built bool) *Server 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+healthPath, handleHealth)
 	mux.HandleFunc("GET "+releasesPath, handleReleases(releaseProvider(cfg, log)))
+	// Everything above is public. Endpoints that change data or show what is
+	// not public go behind requireKey, like this one.
+	mux.Handle("GET "+pingPath, requireKey(cfg.APIKey, handlePing(cfg.ServiceName)))
+	if len(cfg.APIKey) < minKeyLength {
+		log.Warn("LYABAH_KEY is not set or is shorter than 12 characters; the protected API endpoints answer 503")
+	}
 
 	csp := contentSecurityPolicy(nil)
 	if built {

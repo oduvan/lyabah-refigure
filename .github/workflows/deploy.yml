@@ -4,9 +4,9 @@ name: Deploy
 # ssh) and builds the image there, running as the unprivileged `deploy` user.
 #
 # The connection details are not secret — they are the shared server's, and are
-# written out in the README — so they default here and this repo needs only ONE
-# thing configured: the SSH_PRIVATE_KEY secret. Setting the matching Actions
-# variable still overrides any of them.
+# written out in the README — so they default here. The repo needs two secrets:
+# SSH_PRIVATE_KEY, and LYABAH_KEY (the API key, which lyabah-service sets).
+# Setting the matching Actions variable still overrides any of the details.
 
 on:
   push:
@@ -59,10 +59,17 @@ jobs:
                 "tar xzf - -C $APP_DIR"
 
       - name: Build & bring up on the server
+        # Secrets go on stdin, one per line, so they never appear on a command
+        # line or in the process list on either side.
+        env:
+          # The bearer key of this service's API, shared by every lyabah
+          # service; lyabah-service's share-lyabah-key workflow sets it.
+          LYABAH_KEY: ${{ secrets.LYABAH_KEY }}
         run: |
-          ssh -i ~/.ssh/id_ci -p "$SSH_PORT" \
-            "$SSH_USER@$SSH_HOST" \
-            "cd $APP_DIR && ./scripts/deploy.sh"
+          printf '%s\n' "$LYABAH_KEY" \
+            | ssh -i ~/.ssh/id_ci -p "$SSH_PORT" \
+                "$SSH_USER@$SSH_HOST" \
+                "cd $APP_DIR && ./scripts/deploy.sh --secrets-from-stdin"
 
       - name: Wait for the container to report healthy
         run: |

@@ -40,6 +40,13 @@ type Config struct {
 	ReleasesTTL time.Duration
 	// GitHubToken is optional; it only lifts the unauthenticated rate limit.
 	GitHubToken string
+	// APIKey is LYABAH_KEY: the bearer key that every call to the protected
+	// API endpoints must carry. It is the one key shared by all the lyabah
+	// services. Empty (or too short) means those endpoints answer 503.
+	APIKey string
+	// ServiceName is what GET /api/ping reports, the same name the compose
+	// project and the Traefik router use.
+	ServiceName string
 	// LogLevel is one of debug, info, warn, error.
 	LogLevel string
 	// ReadTimeout and friends bound a request's lifetime.
@@ -54,6 +61,7 @@ const (
 	defaultVersion = "1.0.0"
 	defaultRepo    = "oduvan/lyabah-refigure"
 	defaultTTL     = 15 * time.Minute
+	defaultService = "refigure"
 )
 
 // The v1.0.0 assets, so the buttons are correct even before GitHub answers.
@@ -83,6 +91,8 @@ func Load() (Config, error) {
 		StaticDir:         strings.TrimSpace(os.Getenv("REFIGURE_STATIC_DIR")),
 		CanonicalHost:     strings.TrimSpace(os.Getenv("REFIGURE_CANONICAL_HOST")),
 		LogLevel:          envOr("LOG_LEVEL", "info"),
+		APIKey:            strings.TrimSpace(os.Getenv("LYABAH_KEY")),
+		ServiceName:       defaultService,
 		ReadHeaderTimeout: 10 * time.Second,
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
@@ -95,6 +105,9 @@ func Load() (Config, error) {
 			return Config{}, fmt.Errorf("PORT: %q is not a valid port number", port)
 		}
 		cfg.Addr = ":" + port
+	}
+	if name := strings.TrimSpace(os.Getenv("SERVICE_NAME")); name != "" {
+		cfg.ServiceName = name
 	}
 	if addr := strings.TrimSpace(os.Getenv("REFIGURE_ADDR")); addr != "" {
 		cfg.Addr = addr

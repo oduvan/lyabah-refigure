@@ -5,7 +5,8 @@ name: ${SERVICE_NAME:-refigure}
 # It attaches to the shared `shared` network so Traefik can route to it, and
 # runs nothing else: no Postgres, no Redis, no mail. The landing site keeps no
 # state, so the shared Postgres/Redis connection strings are deliberately NOT
-# injected here (see .env.example).
+# injected here (see .env.example). The one secret it gets is LYABAH_KEY, the
+# API key, which scripts/deploy.sh writes into .env.
 #
 # Every value defaults to this service's own, so a deploy needs no `.env` at all.
 # One placed beside this file still wins — that is how you override a download
@@ -34,6 +35,11 @@ services:
       # Set to SERVICE_HOST to 301 every other hostname to the canonical one.
       - REFIGURE_CANONICAL_HOST
       - LOG_LEVEL
+      # The bearer key of the protected API (see README, "API
+      # authentication"). Not set means those endpoints answer 503.
+      - LYABAH_KEY
+      # What GET /api/ping reports.
+      - SERVICE_NAME=${SERVICE_NAME:-refigure}
     networks:
       - shared
     healthcheck:
